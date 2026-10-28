@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.ReservationMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <!-- 时段统计VO -->
+    <resultMap id="TimeSlotVOMap" type="com.zhuimeng.vo.TimeSlotVO">
+        <result column="time_slot" property="timeSlot"/>
+        <result column="count" property="count"/>
+    </resultMap>
+
+    <!-- ==================== CRUD ==================== -->
+
+    <!-- 新增预约 -->
+    <insert id="insert" parameterType="com.zhuimeng.dto.ReservationDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO reservation (
+            name, mobile, time, visitor, type, status,
+            create_time, update_time, create_by, update_by
+        ) VALUES (
+            #{name}, #{mobile}, #{time}, #{visitor}, #{type}, 0,
+            #{createTime}, #{updateTime}, #{createBy}, #{updateBy}
+        )
+    </insert>
+
+    <insert id="insertSite" parameterType="com.zhuimeng.entity.Reservation">
+        INSERT INTO reservation (
+            name, mobile, time, visitor, type, status,
+            create_time, update_time, create_by, update_by
+        ) VALUES (
+            #{name}, #{mobile}, #{time}, #{visitor}, #{type}, 1,
+            #{createTime}, #{updateTime}, #{createBy}, #{updateBy}
+        )
+    </insert>
+
+    <!-- 按日期统计各时段预约人数 -->
+    <select id="countByTime" resultMap="TimeSlotVOMap">
+        SELECT
+            CONCAT(LPAD(h, 2, '0'), ':00-', LPAD(h + 1, 2, '0'), ':00') AS time_slot,
+            cnt AS count
+        FROM (
+            SELECT HOUR(time) AS h, COUNT(*) AS cnt
+            FROM reservation
+            WHERE DATE(time) = #{time}
+              AND status != 2
+            GROUP BY HOUR(time)
+        ) t
+        ORDER BY h
+    </select>
+
+    <!-- 预约列表（分页，按状态筛选） -->
+    <select id="page" resultType="com.zhuimeng.vo.ReservationVO">
+        SELECT
+            id, name, mobile, time, visitor, type, status,
+            create_time, remark
+        FROM reservation
+        WHERE 1 = 1
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据id查询预约 -->
+    <select id="selectById" resultType="com.zhuimeng.entity.Reservation">
+        SELECT
+            id, name, mobile, time, visitor, type, status,
+            create_time, update_time, create_by, update_by, remark
+        FROM reservation
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据预约人信息查询预约（防重复提交） -->
+    <select id="selectByReservation" parameterType="com.zhuimeng.dto.ReservationDTO" resultType="com.zhuimeng.entity.Reservation">
+        SELECT
+            id, name, mobile, time, visitor, type, status,
+            create_time, update_time, create_by, update_by, remark
+        FROM reservation
+        WHERE name = #{name}
+          AND mobile = #{mobile}
+          AND time = #{time}
+          AND visitor = #{visitor}
+          AND status = 0
+        LIMIT 1
+    </select>
+
+    <!-- 根据id更新预约 -->
+    <update id="updateById" parameterType="com.zhuimeng.entity.Reservation">
+        UPDATE reservation
+        SET
+            status = #{status},
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            remark = #{remark}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 预约过期定时任务：将已过预约时间且状态为"待参观"的记录标记为"已过期" -->
+    <update id="updateReservationStatus">
+        UPDATE reservation
+        SET status = 3
+        WHERE time &lt; NOW()
+          AND status = 0
+    </update>
+
+    <!-- 精准过期预约：将指定id且状态为"待参观"的记录标记为"已过期" -->
+    <update id="updateTimeoutReservation">
+        UPDATE reservation
+        SET status = 3
+        WHERE id = #{reservationId}
+          AND status = 0
+    </update>
+
+    <!-- ==================== 分页查询 ==================== -->
+
+    <!-- 分页查询预约（系统端通用）：姓名模糊、手机号精准、时间范围 -->
+    <select id="selectReservationPage" parameterType="com.zhuimeng.dto.PageDTO" resultType="com.zhuimeng.vo.ReservationVO">
+        SELECT
+            id, name, mobile, time, visitor, type, status,
+            create_time, remark
+        FROM reservation
+        WHERE 1 = 1
+        <if test="name != null and name != ''">
+            AND name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test="phone != null and phone != ''">
+            AND mobile = #{phone}
+        </if>
+        <if test="startTime != null">
+            AND time &gt;= FROM_UNIXTIME(#{startTime}/1000)
+        </if>
+        <if test="endTime != null">
+            AND time &lt;= FROM_UNIXTIME(#{endTime}/1000)
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

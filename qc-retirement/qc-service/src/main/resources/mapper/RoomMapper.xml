@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.RoomMapper">
+
+    <!-- ==================== 新增 ==================== -->
+
+    <!-- 添加房间（返回插入后的主键ID） -->
+    <insert id="addRoom" parameterType="com.zhuimeng.entity.Room" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO room (
+            code, sort, type_name, floor_id,
+            create_time, create_by, remark
+        ) VALUES (
+            #{code}, #{sort}, #{typeName}, #{floorId},
+            #{createTime}, #{createBy}, #{remark}
+        )
+    </insert>
+
+    <!-- ==================== 修改 ==================== -->
+
+    <!-- 编辑房间 -->
+    <update id="editRoom" parameterType="com.zhuimeng.entity.Room">
+        UPDATE room
+        SET
+            code = #{code},
+            sort = #{sort},
+            type_name = #{typeName},
+            floor_id = #{floorId},
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            remark = #{remark}
+        WHERE id = #{id}
+    </update>
+
+    <!-- ==================== 删除 ==================== -->
+
+    <!-- 删除房间（逻辑删除） -->
+    <update id="deleteRoom">
+        UPDATE room
+        SET is_deleted = 1
+        WHERE id = #{id}
+    </update>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <!-- 查询所有房间类型 -->
+    <select id="getRoomTypes" resultType="com.zhuimeng.entity.RoomType">
+        SELECT id, name, bed_count, price, introduction, photo, status,
+               create_time, update_time, create_by, update_by, remark
+        FROM room_type
+        <where>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询所有房间 -->
+    <select id="getAll" resultType="com.zhuimeng.entity.Room">
+        SELECT id, code, sort, type_name, floor_id,
+               create_time, update_time, create_by, update_by, remark
+        FROM room
+        WHERE is_deleted = 0
+        ORDER BY sort ASC, id DESC
+    </select>
+
+    <!-- 查询房间详情 -->
+    <select id="getDetail" resultType="com.zhuimeng.entity.Room">
+        SELECT id, code, sort, type_name, floor_id,
+               create_time, update_time, create_by, update_by, remark
+        FROM room
+        WHERE id = #{id}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 根据楼层查询房间 -->
+    <select id="getRoomByFloorId" resultType="com.zhuimeng.entity.Room">
+        SELECT id, code, sort, type_name, floor_id,
+               create_time, update_time, create_by, update_by, remark
+        FROM room
+        WHERE floor_id = #{id}
+          AND is_deleted = 0
+        ORDER BY sort ASC, id DESC
+    </select>
+
+</mapper>

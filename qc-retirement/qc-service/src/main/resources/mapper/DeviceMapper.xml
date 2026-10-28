@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.DeviceMapper">
+
+    <!-- 根据IoT设备ID查询设备数据 -->
+    <select id="selectById" resultType="com.zhuimeng.entity.DeviceData">
+        SELECT id, device_name, iot_id, note_name, product_id, product_name,
+               function_name, access_location, data_value, alarm_time,
+               processing_result, processor, processing_time, status,
+               create_time, update_time, create_by, update_by, remark
+        FROM device_data
+        WHERE iot_id = #{iotId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 健康数据按日查询 -->
+    <select id="queryDeviceDataListByDay" resultType="com.zhuimeng.vo.DeviceDataVO">
+        SELECT id, device_name, iot_id, note_name, product_id, product_name,
+               function_name, access_location, data_value, alarm_time,
+               processing_result, processor, processing_time, status,
+               create_time, update_time, create_by, update_by, remark
+        FROM device_data
+        <where>
+            <if test="iotId != null and iotId != ''">
+                AND iot_id = #{iotId}
+            </if>
+            <if test="functionId != null and functionId != ''">
+                AND function_name = #{functionId}
+            </if>
+            <if test="startTime != null">
+                AND create_time &gt;= FROM_UNIXTIME(#{startTime} / 1000)
+            </if>
+            <if test="endTime != null">
+                AND create_time &lt;= FROM_UNIXTIME(#{endTime} / 1000)
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据绑定位置和物理位置类型批量查询设备 -->
+    <select id="selectByLocationList" resultType="com.zhuimeng.entity.Device">
+        SELECT id, device_id, binding_location, location_type, physical_location_type,
+               device_name, note_name, product_id, produce_name, device_description,
+               create_time, update_time, is_deleted, create_by, update_by, remark
+        FROM device
+        WHERE binding_location IN
+        <foreach collection="bindingLocations" item="location" open="(" separator="," close=")">
+            #{location}
+        </foreach>
+        AND physical_location_type = #{physicalLocationType}
+        AND is_deleted = 0
+    </select>
+
+    <!-- 根据设备ID列表批量查询设备数据 -->
+    <select id="selectDataByIotIds" resultType="com.zhuimeng.entity.DeviceData">
+        SELECT id, device_name, iot_id, note_name, product_id, product_name,
+               function_name, access_location, data_value, alarm_time,
+               processing_result, processor, processing_time, status,
+               create_time, update_time, create_by, update_by, remark
+        FROM device_data
+        WHERE iot_id IN
+        <foreach collection="iotIds" item="iotId" open="(" separator="," close=")">
+            #{iotId}
+        </foreach>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 异常数据查询 -->
+    <select id="queryDeviceDataListAbnormal" resultType="com.zhuimeng.vo.DeviceDataVO">
+        SELECT id, device_name, iot_id, note_name, product_id, product_name,
+               function_name, access_location, data_value, alarm_time,
+               processing_result, processor, processing_time, status,
+               create_time, update_time, create_by, update_by, remark
+        FROM device_data
+        <where>
+            status != '0'
+            <if test="iotId != null and iotId != ''">
+                AND iot_id = #{iotId}
+            </if>
+            <if test="functionId != null and functionId != ''">
+                AND function_name = #{functionId}
+            </if>
+            <if test="startTime != null">
+                AND create_time &gt;= FROM_UNIXTIME(#{startTime} / 1000)
+            </if>
+            <if test="endTime != null">
+                AND create_time &lt;= FROM_UNIXTIME(#{endTime} / 1000)
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

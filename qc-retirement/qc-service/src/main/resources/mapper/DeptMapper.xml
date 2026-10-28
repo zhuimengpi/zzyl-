@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.DeptMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <resultMap id="DeptMap" type="com.zhuimeng.entity.Dept">
+        <id column="id" property="id"/>
+        <result column="parent_dept_no" property="parentDeptNo"/>
+        <result column="dept_no" property="deptNo"/>
+        <result column="dept_name" property="deptName"/>
+        <result column="sort_no" property="sortNo"/>
+        <result column="data_state" property="dataState"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="leader_id" property="leaderId"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <!-- 部门列表 -->
+    <select id="list" resultMap="DeptMap">
+        SELECT
+            id, parent_dept_no, dept_no, dept_name, sort_no, data_state,
+            create_time, update_time, create_by, update_by, leader_id, remark
+        FROM `sys_dept`
+        <where>
+            <if test="parentDeptNo != null and parentDeptNo != ''">
+                AND parent_dept_no = #{parentDeptNo}
+            </if>
+            <if test="deptName != null and deptName != ''">
+                AND dept_name LIKE CONCAT('%', #{deptName}, '%')
+            </if>
+            <if test="dataStatus != null and dataStatus != ''">
+                AND data_state = #{dataStatus}
+            </if>
+        </where>
+        ORDER BY sort_no ASC, id ASC
+    </select>
+
+    <!-- ==================== 新增 ==================== -->
+
+    <insert id="insert" parameterType="com.zhuimeng.entity.Dept" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_dept (parent_dept_no, dept_no, dept_name, sort_no, data_state,
+                              create_time, create_by, leader_id, remark)
+        VALUES (#{parentDeptNo}, #{deptNo}, #{deptName}, #{sortNo}, #{dataState},
+                #{createTime}, #{createBy}, #{leaderId}, #{remark})
+    </insert>
+
+    <!-- ==================== 修改 ==================== -->
+
+    <update id="updateById" parameterType="com.zhuimeng.entity.Dept">
+        UPDATE sys_dept
+        SET
+            parent_dept_no = #{parentDeptNo},
+            dept_name = #{deptName},
+            sort_no = #{sortNo},
+            data_state = #{dataState},
+            leader_id = #{leaderId},
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            remark = #{remark}
+        WHERE id = #{id}
+        <if test="oldUpdateTime != null">AND update_time = #{oldUpdateTime}</if>
+        <if test="oldUpdateTime == null">AND update_time IS NULL</if>
+    </update>
+
+    <!-- ==================== 删除 ==================== -->
+
+    <delete id="deleteById">
+        DELETE FROM sys_dept WHERE id = #{id}
+    </delete>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <select id="selectById" resultMap="DeptMap">
+        SELECT id, parent_dept_no, dept_no, dept_name, sort_no, data_state,
+               create_time, update_time, create_by, update_by, leader_id, remark
+        FROM sys_dept WHERE id = #{id}
+    </select>
+
+    <select id="selectByParentDeptNo" resultMap="DeptMap">
+        SELECT id, parent_dept_no, dept_no, dept_name, sort_no, data_state,
+               create_time, update_time, create_by, update_by, leader_id, remark
+        FROM sys_dept WHERE parent_dept_no = #{parentDeptNo}
+    </select>
+
+    <!-- 部门树（全量查询，Java 层构建树结构） -->
+    <select id="tree" resultMap="DeptMap">
+        SELECT
+            id, parent_dept_no, dept_no, dept_name, sort_no, data_state,
+            create_time, update_time, create_by, update_by, leader_id, remark
+        FROM `sys_dept`
+        WHERE data_state = '0'
+        ORDER BY sort_no ASC, id ASC
+    </select>
+
+</mapper>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.AIMapper">
+
+    <!-- 插入AI对话消息 -->
+    <insert id="insertAIMessage" parameterType="com.zhuimeng.entity.AIMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO customer (role, content, user_id)
+        VALUES (#{role}, #{content}, #{userId})
+    </insert>
+
+    <!-- 查询历史对话 -->
+    <select id="selectList" resultType="com.zhuimeng.entity.AIMessage">
+        SELECT id, role, content, user_id AS userId
+        FROM customer
+        WHERE user_id = #{userId}
+        ORDER BY id ASC
+    </select>
+
+</mapper>

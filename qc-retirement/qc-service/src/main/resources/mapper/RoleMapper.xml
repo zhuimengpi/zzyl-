@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.RoleMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <resultMap id="RoleMap" type="com.zhuimeng.entity.Role">
+        <id column="id" property="id"/>
+        <result column="role_name" property="roleName"/>
+        <result column="label" property="label"/>
+        <result column="sort_no" property="sortNo"/>
+        <result column="data_state" property="dataState"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="data_scope" property="dataScope"/>
+    </resultMap>
+
+    <!-- ==================== 新增 ==================== -->
+
+    <insert id="insert" parameterType="com.zhuimeng.entity.Role" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_role (role_name, label, sort_no, data_state,
+                              create_time, create_by, remark, data_scope)
+        VALUES (#{roleName}, #{label}, #{sortNo}, #{dataState},
+                #{createTime}, #{createBy}, #{remark}, #{dataScope})
+    </insert>
+
+    <!-- ==================== 修改 ==================== -->
+
+    <update id="updateById" parameterType="com.zhuimeng.entity.Role">
+        UPDATE sys_role
+        SET
+            role_name = #{roleName},
+            data_state = #{dataState},
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            remark = #{remark}
+        WHERE id = #{id}
+        <if test="oldUpdateTime != null">
+            AND update_time = #{oldUpdateTime}
+        </if>
+        <if test="oldUpdateTime == null">
+            AND update_time IS NULL
+        </if>
+    </update>
+
+    <!-- ==================== 删除 ==================== -->
+
+    <delete id="deleteByIds">
+        DELETE FROM sys_role WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <select id="listAll" resultMap="RoleMap">
+        SELECT id, role_name, label, sort_no, data_state,
+               create_time, update_time, remark, create_by, update_by, data_scope
+        FROM sys_role
+        ORDER BY sort_no ASC, id ASC
+    </select>
+
+    <select id="selectById" resultMap="RoleMap">
+        SELECT id, role_name, label, sort_no, data_state,
+               create_time, update_time, remark, create_by, update_by, data_scope
+        FROM sys_role
+        WHERE id = #{id}
+    </select>
+
+    <select id="findResourceNosByRoleId" resultType="java.lang.Long">
+        SELECT resource_no
+        FROM sys_role_resource
+        WHERE role_id = #{roleId} AND data_state = '0'
+    </select>
+
+    <!-- ==================== 角色-资源关联 ==================== -->
+
+    <delete id="deleteResourcesByRoleId">
+        DELETE FROM sys_role_resource WHERE role_id = #{roleId}
+    </delete>
+
+    <insert id="insertRoleResources">
+        INSERT INTO sys_role_resource (role_id, resource_no, create_time, data_state)
+        VALUES
+        <foreach collection="resourceNos" item="resourceNo" separator=",">
+            (#{roleId}, #{resourceNo}, NOW(), '0')
+        </foreach>
+    </insert>
+
+</mapper>

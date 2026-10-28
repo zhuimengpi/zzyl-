@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.NursingTaskMapper">
+
+    <!-- 养老院护理员部门编号 -->
+    <sql id="nurseDeptFilter">
+        AND u.dept_no = '100001005000000'
+    </sql>
+
+    <!-- 分页查询条件 -->
+    <sql id="pageCondition">
+        <where>
+            nt.task_type = 1
+            <if test="status != null">
+                AND o.status = #{status}
+            </if>
+            <if test="elderName != null and elderName != ''">
+                AND e.name LIKE CONCAT('%', #{elderName}, '%')
+            </if>
+            <if test="nurseId != null">
+                AND ne.nursing_id = #{nurseId}
+            </if>
+            <if test="projectId != null">
+                AND o.project_id = #{projectId}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND o.estimated_arrival_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND o.estimated_arrival_time &lt;= #{endTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 分页查询护理任务列表 -->
+    <select id="selectPage" resultType="java.util.HashMap">
+        SELECT
+            nt.id,
+            ANY_VALUE(o.order_no) AS relNo,
+            CAST(ANY_VALUE(o.status) AS SIGNED) AS status,
+            ANY_VALUE(o.estimated_arrival_time) AS estimatedServerTime,
+            ANY_VALUE(o.create_time) AS createTime,
+            ANY_VALUE(o.update_time) AS orderUpdateTime,
+            ANY_VALUE(e.name) AS elderName,
+            ANY_VALUE(e.bed_number) AS bedNumber,
+            ANY_VALUE(np.name) AS projectName,
+            ANY_VALUE(CASE WHEN nt.task_type = 2 THEN 2 ELSE 1 END) AS taskType,
+            ANY_VALUE(creator.real_name) AS creator,
+            ANY_VALUE(updater.real_name) AS updater,
+            ANY_VALUE(nt.update_time) AS updateTime
+        FROM nursing_task nt
+        INNER JOIN `order` o ON nt.rel_no = o.order_no
+        INNER JOIN elder e ON o.elder_id = e.id
+        INNER JOIN nursing_project np ON o.project_id = np.id
+        LEFT JOIN sys_user creator ON nt.create_by = creator.id
+        LEFT JOIN sys_user updater ON nt.update_by = updater.id
+        LEFT JOIN nursing_elder ne ON e.id = ne.elder_id
+        <include refid="pageCondition"/>
+        GROUP BY nt.id
+        ORDER BY MAX(nt.create_time) DESC
+    </select>
+
+    <!-- 执行任务：更新 nursing_task -->
+    <update id="updateTaskDone">
+        UPDATE nursing_task
+        SET mark = #{mark},
+            task_image = #{taskImage},
+            update_by = #{userId},
+            update_time = NOW()
+        WHERE id = #{taskId}
+    </update>
+
+    <!-- 同步更新订单状态为已执行 -->
+    <update id="updateOrderStatusByTask">
+        UPDATE `order` o
+        INNER JOIN nursing_task nt ON o.order_no = nt.rel_no
+        SET o.status = #{status},
+            o.update_time = NOW()
+        WHERE nt.id = #{taskId}
+    </update>
+
+    <!-- 取消任务（自动退款） -->
+    <update id="updateTaskCancel">
+        UPDATE `order` o
+        INNER JOIN nursing_task nt ON o.order_no = nt.rel_no
+        SET o.status = 5,
+            o.reason = #{reason},
+            o.refund = o.amount,
+            o.is_refund = 'YES',
+            o.update_time = NOW(),
+            nt.status = 3,
+            nt.cancel_reason = #{reason},
+            nt.update_by = #{userId},
+            nt.update_time = NOW()
+        WHERE nt.id = #{taskId}
+    </update>
+
+    <!-- 修改执行日期 -->
+    <update id="updateTaskTime">
+        UPDATE `order` o
+        INNER JOIN nursing_task nt ON o.order_no = nt.rel_no
+        SET o.estimated_arrival_time = FROM_UNIXTIME(#{estimatedServerTime} / 1000),
+            o.update_time = NOW()
+        WHERE nt.id = #{taskId}
+    </update>
+
+    <!-- 任务详情 -->
+    <select id="selectDetail" resultType="java.util.HashMap">
+        SELECT
+            nt.id,
+            o.order_no AS relNo,
+            o.status,
+            o.estimated_arrival_time AS estimatedServerTime,
+            o.create_time AS createTime,
+            e.name AS elderName,
+            e.bed_number AS bedNumber,
+            e.id_card_no AS idCardNo,
+            e.age,
+            e.sex,
+            e.phone,
+            np.name AS projectName,
+            np.image AS projectImage,
+            np.unit AS projectUnit,
+            CASE WHEN nt.task_type = 2 THEN 2 ELSE 1 END AS taskType,
+            creator.real_name AS creator,
+            updater.real_name AS updater,
+            nt.mark,
+            nt.task_image AS taskImage,
+            nt.update_time AS updateTime,
+            o.reason
+        FROM nursing_task nt
+        INNER JOIN `order` o ON nt.rel_no = o.order_no
+        INNER JOIN elder e ON o.elder_id = e.id
+        INNER JOIN nursing_project np ON o.project_id = np.id
+        LEFT JOIN sys_user creator ON nt.create_by = creator.id
+        LEFT JOIN sys_user updater ON nt.update_by = updater.id
+        WHERE nt.id = #{taskId}
+    </select>
+
+    <!-- 根据订单号查询任务 -->
+    <select id="selectByOrderNo" resultType="java.util.HashMap">
+        SELECT
+            nt.id,
+            o.order_no AS relNo,
+            o.status
+        FROM nursing_task nt
+        INNER JOIN `order` o ON nt.rel_no = o.order_no
+        WHERE o.order_no = #{orderNo} AND nt.task_type = 1
+        LIMIT 1
+    </select>
+
+    <!-- 插入护理任务 -->
+    <insert id="insertNursingTask" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO nursing_task (
+            nursing_id, project_id, elder_id, bed_number,
+            task_type, estimated_server_time,
+            status, rel_no, create_time, create_by
+        ) VALUES (
+            #{nursingId}, #{projectId}, #{elderId}, #{bedNumber},
+            #{taskType}, #{estimatedServerTime},
+            #{status}, #{relNo}, NOW(), #{createBy}
+        )
+    </insert>
+
+    <!-- 查询老人绑定的护理员ID -->
+    <select id="selectNursingIdByElderId" resultType="java.lang.Long">
+        SELECT nursing_id
+        FROM nursing_elder
+        WHERE elder_id = #{elderId}
+        LIMIT 1
+    </select>
+
+    <!-- 每月1号：批量生成月度护理任务（护理计划内，task_type=2） -->
+    <insert id="insertMonthlyNursingTasks">
+        INSERT INTO nursing_task (
+            nursing_id, project_id, elder_id, bed_number,
+            task_type, estimated_server_time,
+            status, rel_no, create_time, create_by
+        )
+        SELECT
+            ne.nursing_id,
+            npp.project_id,
+            e.id,
+            e.bed_number,
+            2,
+            STR_TO_DATE(CONCAT(DATE_FORMAT(NOW(), '%Y-%m-'), '01 ', npp.execute_time, ':00'), '%Y-%m-%d %H:%i:%s'),
+            1,
+            CONCAT('MP-', DATE_FORMAT(NOW(), '%Y%m'), '-', e.id, '-', npp.project_id),
+            NOW(),
+            0
+        FROM elder e
+        INNER JOIN check_in_config cic ON e.id = cic.elder_id
+        INNER JOIN nursing_level nl ON cic.nursing_level_id = nl.id AND nl.status = 1
+        INNER JOIN nursing_plan np ON nl.lplan_id = np.id
+        INNER JOIN nursing_project_plan npp ON np.id = npp.plan_id AND npp.execute_cycle = 2
+        LEFT JOIN nursing_elder ne ON e.id = ne.elder_id
+        WHERE e.status = 4
+          AND NOW() BETWEEN cic.cost_start_time AND cic.cost_end_time
+          AND NOT EXISTS (
+              SELECT 1 FROM nursing_task nt
+              WHERE nt.elder_id = e.id
+                AND nt.project_id = npp.project_id
+                AND nt.task_type = 2
+                AND DATE_FORMAT(nt.create_time, '%Y%m') = DATE_FORMAT(NOW(), '%Y%m')
+          )
+    </insert>
+
+    <!-- 每日刷新：将过期未执行的月度任务（task_type=2）调整到当日 -->
+    <update id="refreshUnexecutedTasks">
+        UPDATE nursing_task
+        SET estimated_server_time = STR_TO_DATE(CONCAT(DATE_FORMAT(NOW(), '%Y-%m-%d '),
+                DATE_FORMAT(estimated_server_time, '%H:%i:%s')), '%Y-%m-%d %H:%i:%s'),
+            update_time = NOW()
+        WHERE task_type = 2
+          AND status = 1
+          AND estimated_server_time &lt; CURDATE()
+    </update>
+
+</mapper>

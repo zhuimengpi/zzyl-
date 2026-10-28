@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.TradingMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <resultMap id="TradingMap" type="com.zhuimeng.entity.Trading">
+        <id column="id" property="id"/>
+        <result column="product_order_no" property="productOrderNo"/>
+        <result column="trading_order_no" property="tradingOrderNo"/>
+        <result column="trading_channel" property="tradingChannel"/>
+        <result column="trading_type" property="tradingType"/>
+        <result column="trading_state" property="tradingState"/>
+        <result column="payee_name" property="payeeName"/>
+        <result column="payee_id" property="payeeId"/>
+        <result column="payer_name" property="payerName"/>
+        <result column="payer_id" property="payerId"/>
+        <result column="trading_amount" property="tradingAmount"/>
+        <result column="refund" property="refund"/>
+        <result column="is_refund" property="isRefund"/>
+        <result column="result_code" property="resultCode"/>
+        <result column="result_msg" property="resultMsg"/>
+        <result column="result_json" property="resultJson"/>
+        <result column="place_order_code" property="placeOrderCode"/>
+        <result column="place_order_msg" property="placeOrderMsg"/>
+        <result column="place_order_json" property="placeOrderJson"/>
+        <result column="enterprise_id" property="enterpriseId"/>
+        <result column="memo" property="memo"/>
+        <result column="qr_code" property="qrCode"/>
+        <result column="open_id" property="openId"/>
+        <result column="enable_flag" property="enableFlag"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- ==================== CRUD ==================== -->
+
+    <insert id="insert" parameterType="com.zhuimeng.entity.Trading" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `trading` (
+            product_order_no, trading_order_no, trading_channel, trading_type,
+            trading_state, payee_name, payee_id, payer_name, payer_id,
+            trading_amount, refund, is_refund,
+            result_code, result_msg, result_json,
+            place_order_code, place_order_msg, place_order_json,
+            enterprise_id, memo, qr_code, open_id, enable_flag,
+            create_time, update_time, create_by, update_by, remark
+        ) VALUES (
+            #{productOrderNo}, #{tradingOrderNo}, #{tradingChannel}, #{tradingType},
+            #{tradingState}, #{payeeName}, #{payeeId}, #{payerName}, #{payerId},
+            #{tradingAmount}, #{refund}, #{isRefund},
+            #{resultCode}, #{resultMsg}, #{resultJson},
+            #{placeOrderCode}, #{placeOrderMsg}, #{placeOrderJson},
+            #{enterpriseId}, #{memo}, #{qrCode}, #{openId}, #{enableFlag},
+            #{createTime}, #{updateTime}, #{createBy}, #{updateBy}, #{remark}
+        )
+    </insert>
+
+    <update id="updateTrading" parameterType="com.zhuimeng.entity.Trading">
+        UPDATE `trading`
+        SET trading_state = #{tradingState},
+            result_code = #{resultCode},
+            result_msg = #{resultMsg},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByTradingOrderNo" resultMap="TradingMap">
+        SELECT * FROM `trading` WHERE trading_order_no = #{tradingOrderNo}
+    </select>
+
+</mapper>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.PostMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <resultMap id="PostMap" type="com.zhuimeng.entity.Post">
+        <id column="id" property="id"/>
+        <result column="dept_no" property="deptNo"/>
+        <result column="post_no" property="postNo"/>
+        <result column="post_name" property="postName"/>
+        <result column="sort_no" property="sortNo"/>
+        <result column="data_state" property="dataState"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+    </resultMap>
+
+    <!-- ==================== 新增 ==================== -->
+
+    <insert id="insert" parameterType="com.zhuimeng.entity.Post" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_post (
+            dept_no, post_no, post_name, sort_no, data_state,
+            create_time, create_by, remark
+        ) VALUES (
+            #{deptNo}, #{postNo}, #{postName}, #{sortNo}, #{dataState},
+            #{createTime}, #{createBy}, #{remark}
+        )
+    </insert>
+
+    <!-- ==================== 修改 ==================== -->
+
+    <update id="updateById" parameterType="com.zhuimeng.entity.Post">
+        UPDATE sys_post
+        SET
+            dept_no = #{deptNo},
+            post_name = #{postName},
+            sort_no = #{sortNo},
+            data_state = #{dataState},
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            remark = #{remark}
+        WHERE id = #{id}
+        <if test="oldUpdateTime != null">
+            AND update_time = #{oldUpdateTime}
+        </if>
+        <if test="oldUpdateTime == null">
+            AND update_time IS NULL
+        </if>
+    </update>
+
+    <!-- ==================== 删除 ==================== -->
+
+    <delete id="deleteById">
+        DELETE FROM sys_post WHERE id = #{id}
+    </delete>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <!-- 全量岗位列表 -->
+    <select id="listAll" resultMap="PostMap">
+        SELECT
+            id, dept_no, post_no, post_name, sort_no, data_state,
+            create_time, update_time, remark, create_by, update_by
+        FROM `sys_post`
+        ORDER BY sort_no ASC, id ASC
+    </select>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="PostMap">
+        SELECT
+            id, dept_no, post_no, post_name, sort_no, data_state,
+            create_time, update_time, remark, create_by, update_by
+        FROM `sys_post`
+        WHERE id = #{id}
+    </select>
+
+</mapper>

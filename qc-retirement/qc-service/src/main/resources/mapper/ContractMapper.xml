@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.ContractMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <!-- 合同列表VO映射 -->
+    <resultMap id="ContractVOMap" type="com.zhuimeng.vo.ContractVO">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="contract_no" property="contractNo"/>
+        <result column="pdf_url" property="pdfUrl"/>
+        <result column="member_phone" property="memberPhone"/>
+        <result column="elder_id" property="elderId"/>
+        <result column="elder_name" property="elderName"/>
+        <result column="member_name" property="memberName"/>
+        <result column="start_time" property="startTime"/>
+        <result column="end_time" property="endTime"/>
+        <result column="status" property="status"/>
+        <result column="sort" property="sort"/>
+        <result column="level_desc" property="levelDesc"/>
+        <result column="create_time" property="createTime"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="remark" property="remark"/>
+        <result column="check_in_no" property="checkInNo"/>
+        <result column="sign_date" property="signDate"/>
+        <result column="release_submitter" property="releaseSubmitter"/>
+        <result column="release_date" property="releaseDate"/>
+        <result column="release_pdf_url" property="releasePdfUrl"/>
+        <!-- 关联老人信息 -->
+        <association property="elderVo" javaType="com.zhuimeng.vo.ElderVO">
+            <id column="elder_id" property="id"/>
+            <result column="elder_name" property="name"/>
+            <result column="elder_image" property="image"/>
+        </association>
+    </resultMap>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <!-- 查询合同列表（联表查老人信息，支持动态筛选） -->
+    <select id="selectContractVOList" resultMap="ContractVOMap">
+        SELECT
+            c.id, c.name, c.contract_no, c.pdf_url, c.member_phone,
+            c.elder_id, c.elder_name, c.member_name,
+            c.start_time, c.end_time, c.status, c.sort, c.level_desc,
+            c.create_time, c.create_by, c.update_time, c.update_by,
+            c.remark, c.check_in_no, c.sign_date,
+            c.release_submitter, c.release_date, c.release_pdf_url,
+            e.image AS elder_image
+        FROM `contract` c
+        LEFT JOIN `elder` e ON c.elder_id = e.id
+        <where>
+            <if test="contractNo != null and contractNo != ''">
+                AND c.contract_no LIKE CONCAT('%', #{contractNo}, '%')
+            </if>
+            <if test="elderName != null and elderName != ''">
+                AND c.elder_name LIKE CONCAT('%', #{elderName}, '%')
+            </if>
+            <if test="status != null">
+                AND c.status = #{status}
+            </if>
+            <if test="startTime != null">
+                AND c.start_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND c.end_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY c.create_time DESC
+    </select>
+
+    <!-- 合同详情（含老人信息、房间床位、护理等级、合同日期、PDF地址） -->
+    <select id="selectContractDetailById" resultType="java.util.HashMap">
+        SELECT
+            c.id,
+            c.name,
+            c.contract_no AS contractNo,
+            c.pdf_url AS pdfUrl,
+            c.member_phone AS memberPhone,
+            c.elder_id AS elderId,
+            c.elder_name AS elderName,
+            c.member_name AS memberName,
+            c.start_time AS startTime,
+            c.end_time AS endTime,
+            c.status,
+            c.sort,
+            c.level_desc AS levelDesc,
+            c.create_time AS createTime,
+            c.create_by AS createBy,
+            c.update_time AS updateTime,
+            c.update_by AS updateBy,
+            c.remark,
+            c.check_in_no AS checkInNo,
+            c.sign_date AS signDate,
+            c.release_submitter AS releaseSubmitter,
+            c.release_date AS releaseDate,
+            c.release_pdf_url AS releasePdfUrl,
+            e.name AS elderName,
+            e.id_card_no AS elderIdCardNo,
+            e.age AS elderAge,
+            e.sex AS elderSex,
+            e.phone AS elderPhone,
+            e.image AS elderImage,
+            e.bed_number AS bedNumber,
+            e.bed_id AS bedId,
+            cfg.bed_no AS configBedNo,
+            cfg.check_in_start_time AS checkInStartTime,
+            cfg.check_in_end_time AS checkInEndTime,
+            cfg.cost_start_time AS costStartTime,
+            cfg.cost_end_time AS costEndTime,
+            cfg.deposit_amount AS depositAmount,
+            cfg.nursing_cost AS nursingCost,
+            cfg.bed_cost AS bedCost,
+            cfg.other_cost AS otherCost,
+            cfg.medical_insurance_payment AS medicalInsurancePayment,
+            cfg.government_subsidy AS governmentSubsidy,
+            nl.name AS nursingLevelName,
+            nl.fee AS nursingLevelFee
+        FROM `contract` c
+        LEFT JOIN `elder` e ON c.elder_id = e.id
+        LEFT JOIN `check_in_config` cfg ON c.elder_id = cfg.elder_id
+        LEFT JOIN `nursing_level` nl ON cfg.nursing_level_id = nl.id
+        WHERE c.id = #{id}
+    </select>
+
+</mapper>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.UserMapper">
+
+    <update id="updateUserById">
+        UPDATE sys_user
+        <set>
+            <if test="realName != null and realName != ''">
+                real_name = #{realName},
+            </if>
+            <if test="mobile != null and mobile != ''">
+                mobile = #{mobile},
+            </if>
+            <if test="sex != null">
+                sex = #{sex},
+            </if>
+            <if test="avatar != null and avatar != ''">
+                avatar = #{avatar},
+            </if>
+            update_time = #{updateTime},
+            update_by = #{updateBy}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="insert" parameterType="com.zhuimeng.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user (username, password, user_type, avatar, nick_name,
+                              email, real_name, mobile, sex, data_state, dept_no, post_no,
+                              create_time, create_by, remark, is_delete)
+        VALUES (#{username}, #{password}, #{userType}, #{avatar}, #{nickName},
+                #{email}, #{realName}, #{mobile}, #{sex}, #{dataState}, #{deptNo}, #{postNo},
+                #{createTime}, #{createBy}, #{remark}, 0)
+    </insert>
+
+    <update id="updateById" parameterType="com.zhuimeng.entity.User">
+        UPDATE sys_user
+        <set>
+            <if test="realName != null">real_name = #{realName},</if>
+            <if test="mobile != null">mobile = #{mobile},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="deptNo != null">dept_no = #{deptNo},</if>
+            <if test="postNo != null">post_no = #{postNo},</if>
+            <if test="dataState != null">data_state = #{dataState},</if>
+            update_time = #{updateTime},
+            update_by = #{updateBy}
+        </set>
+        WHERE id = #{id}
+        <if test="oldUpdateTime != null">AND update_time = #{oldUpdateTime}</if>
+        <if test="oldUpdateTime == null">AND update_time IS NULL</if>
+    </update>
+
+    <update id="softDeleteByIds">
+        UPDATE sys_user SET is_delete = 1
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <delete id="deleteUserRoles">
+        DELETE FROM sys_user_role WHERE user_id = #{userId}
+    </delete>
+
+    <insert id="insertUserRoles">
+        INSERT INTO sys_user_role (user_id, role_id, create_time, data_state)
+        VALUES
+        <foreach collection="roleIds" item="roleId" separator=",">
+            (#{userId}, #{roleId}, NOW(), '0')
+        </foreach>
+    </insert>
+
+    <update id="updatePassword">
+        UPDATE sys_user
+        SET password = #{password},
+            update_time = #{updateTime},
+            update_by = #{updateBy}
+        WHERE id = #{id}
+    </update>
+
+    <select id="listAll" resultType="com.zhuimeng.entity.User">
+        select * from sys_user where is_delete = 0;
+    </select>
+
+    <select id="selectUserById" resultType="com.zhuimeng.entity.User">
+        SELECT u.id, u.username, u.open_id, u.password, u.user_type, u.avatar, u.nick_name,
+               u.email, u.real_name, u.mobile, u.sex, u.data_state, u.dept_no, u.post_no,
+               u.create_time, u.update_time, u.remark, u.create_by, u.update_by,
+               u.is_leader, u.is_delete,
+               d.dept_name,
+               p.post_name,
+               (SELECT GROUP_CONCAT(DISTINCT r.role_name SEPARATOR ',')
+                FROM sys_user_role ur
+                INNER JOIN sys_role r ON ur.role_id = r.id
+                WHERE ur.user_id = u.id
+                  AND ur.data_state = '0'
+                  AND r.data_state = '0') AS role_name
+        FROM sys_user u
+        LEFT JOIN sys_dept d ON u.dept_no = d.dept_no
+        LEFT JOIN sys_post p ON u.post_no = p.post_no
+        WHERE u.id = #{id}
+    </select>
+</mapper>

@@ -1,0 +1,33 @@
+# mysql连接配置
+zzyl:
+  mysql:
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+    # 连接地址：数据库名为 qc_zzyl，字符集为 utf8mb4
+    url: jdbc:mysql://${DATA_HOST}/qc_zzyl
+    # MySQL 8.x 驱动（如果是 MySQL 5.x，改成 com.mysql.jdbc.Driver）
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# Redis连接配置
+redis:
+  host: ${REDIS_HOST}
+  port: 6379
+  password: ${REDIS_PASSWORD}
+  # 数据库索引
+  database: 0
+
+# 微信小程序配置
+Wechat:
+  app-id: ${WECHAT_APP_ID}
+  secret: ${WECHAT_SECRET}
+
+aliyun:
+  # 阿里云dashscope AI接入
+  accessKeyId: ${DASHSCOPE_API_KEY}
+  # 阿里云OSS
+  oss:
+    endpoint: oss-cn-shanghai.aliyuncs.com      #域名地址
+    bucketName: qc-zzyl     #OSS中bucket名称
+    region: cn-shanghai     #bucket所在地域
+    access-key-id: ${ALIYUN_USER} #阿里云账号
+    access-key-secret: ${ALIYUN_KEY} #阿里云密钥

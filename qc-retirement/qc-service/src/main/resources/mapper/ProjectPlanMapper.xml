@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.ProjectPlanMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <resultMap id="ProjectPlanMap" type="com.zhuimeng.entity.ProjectPlan">
+        <id column="id" property="id"/>
+        <result column="plan_id" property="planId"/>
+        <result column="project_id" property="projectId"/>
+        <result column="execute_time" property="executeTime"/>
+        <result column="execute_cycle" property="executeCycle"/>
+        <result column="execute_frequency" property="executeFrequency"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <select id="listAll" resultMap="ProjectPlanMap">
+        SELECT
+            id, plan_id, project_id, execute_time,
+            execute_cycle, execute_frequency,
+            create_time, update_time, create_by, update_by, remark
+        FROM `nursing_project_plan`
+        ORDER BY plan_id ASC, id ASC
+    </select>
+
+    <select id="listByPlanId" resultMap="ProjectPlanMap">
+        SELECT
+            id, plan_id, project_id, execute_time,
+            execute_cycle, execute_frequency,
+            create_time, update_time, create_by, update_by, remark
+        FROM `nursing_project_plan`
+        WHERE plan_id = #{planId}
+        ORDER BY id ASC
+    </select>
+
+    <!-- ==================== 新增 ==================== -->
+
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO nursing_project_plan (
+            plan_id, project_id, execute_time,
+            execute_cycle, execute_frequency,
+            create_time, create_by, remark
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.planId}, #{item.projectId}, #{item.executeTime},
+                #{item.executeCycle}, #{item.executeFrequency},
+                #{item.createTime}, #{item.createBy}, #{item.remark}
+            )
+        </foreach>
+    </insert>
+
+    <!-- ==================== 删除 ==================== -->
+
+    <delete id="deleteByPlanId">
+        DELETE FROM nursing_project_plan WHERE plan_id = #{planId}
+    </delete>
+
+</mapper>

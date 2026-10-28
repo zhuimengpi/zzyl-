@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.ElderMapper">
+
+    <!-- 通用查询条件 -->
+    <sql id="queryCondition">
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="idCard != null and idCard != ''">
+                AND id_card_no LIKE CONCAT('%', #{idCard}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询所有老人列表（支持姓名、身份证号模糊匹配） -->
+    <select id="selectList" resultType="com.zhuimeng.entity.Elder">
+        SELECT id, name, image, id_card_no, age, sex, status, phone,
+               create_time, update_time, create_by, update_by, remark,
+               bed_number, bed_id
+        FROM elder
+        <include refid="queryCondition"/>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据老人ID查询老人信息 -->
+    <select id="selectById" resultType="com.zhuimeng.entity.Elder">
+        SELECT id, name, image, id_card_no, age, sex, status, phone,
+               create_time, update_time, create_by, update_by, remark,
+               bed_number, bed_id
+        FROM elder
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据老人ID查询入住配置 -->
+    <select id="selectCheckInConfigByElderId" resultType="com.zhuimeng.entity.CheckInConfig">
+        SELECT id, elder_id, check_in_start_time, check_in_end_time,
+               nursing_level_id, bed_no, cost_start_time, cost_end_time,
+               deposit_amount, nursing_cost, bed_cost, other_cost,
+               medical_insurance_payment, government_subsidy,
+               create_time, update_time, create_by, update_by, remark
+        FROM check_in_config
+        WHERE elder_id = #{elderId}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- 删除老人旧的护理员绑定 -->
+    <delete id="deleteNursingByElderId">
+        DELETE FROM nursing_elder WHERE elder_id = #{elderId}
+    </delete>
+
+    <!-- 批量插入护理员绑定 -->
+    <insert id="insertNursing">
+        INSERT INTO nursing_elder (elder_id, nursing_id, create_time)
+        VALUES
+        <foreach collection="nursingIds" item="nursingId" separator=",">
+            (#{elderId}, #{nursingId}, NOW())
+        </foreach>
+    </insert>
+
+</mapper>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.ResourceMapper">
+
+    <resultMap id="ResourceMap" type="com.zhuimeng.entity.Resource">
+        <id column="id" property="id"/>
+        <result column="resource_no" property="resourceNo"/>
+        <result column="parent_resource_no" property="parentResourceNo"/>
+        <result column="resource_name" property="resourceName"/>
+        <result column="resource_type" property="resourceType"/>
+        <result column="request_path" property="requestPath"/>
+        <result column="label" property="label"/>
+        <result column="data_state" property="dataState"/>
+        <result column="sort_no" property="sortNo"/>
+        <result column="icon" property="icon"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+    </resultMap>
+
+    <!-- ==================== 新增 ==================== -->
+    <insert id="insert" parameterType="com.zhuimeng.entity.Resource" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_resource (resource_no, parent_resource_no, resource_name, resource_type,
+                                  request_path, label, data_state, sort_no, icon,
+                                  create_time, create_by, remark)
+        VALUES (#{resourceNo}, #{parentResourceNo}, #{resourceName}, #{resourceType},
+                #{requestPath}, #{label}, #{dataState}, #{sortNo}, #{icon},
+                #{createTime}, #{createBy}, #{remark})
+    </insert>
+
+    <!-- ==================== 修改 ==================== -->
+    <update id="updateById" parameterType="com.zhuimeng.entity.Resource">
+        UPDATE sys_resource
+        <set>
+            <if test="parentResourceNo != null">parent_resource_no = #{parentResourceNo},</if>
+            <if test="resourceName != null">resource_name = #{resourceName},</if>
+            <if test="resourceType != null">resource_type = #{resourceType},</if>
+            <if test="requestPath != null">request_path = #{requestPath},</if>
+            <if test="dataState != null">data_state = #{dataState},</if>
+            <if test="sortNo != null">sort_no = #{sortNo},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            update_time = #{updateTime},
+            update_by = #{updateBy}
+        </set>
+        WHERE id = #{id}
+        <if test="oldUpdateTime != null">AND update_time = #{oldUpdateTime}</if>
+        <if test="oldUpdateTime == null">AND update_time IS NULL</if>
+    </update>
+
+    <!-- ==================== 删除 ==================== -->
+    <delete id="deleteById">
+        DELETE FROM sys_resource WHERE id = #{id}
+    </delete>
+
+    <!-- ==================== 查询 ==================== -->
+    <select id="listAll" resultMap="ResourceMap">
+        SELECT id, resource_no, parent_resource_no, resource_name, resource_type,
+               request_path, label, data_state, sort_no, icon,
+               create_time, update_time, remark, create_by, update_by
+        FROM sys_resource
+        ORDER BY sort_no ASC, id ASC
+    </select>
+
+    <select id="selectById" resultMap="ResourceMap">
+        SELECT id, resource_no, parent_resource_no, resource_name, resource_type,
+               request_path, label, data_state, sort_no, icon,
+               create_time, update_time, remark, create_by, update_by
+        FROM sys_resource WHERE id = #{id}
+    </select>
+
+    <select id="selectByResourceNo" resultMap="ResourceMap">
+        SELECT id, resource_no, parent_resource_no, resource_name, resource_type,
+               request_path, label, data_state, sort_no, icon,
+               create_time, update_time, remark, create_by, update_by
+        FROM sys_resource WHERE resource_no = #{resourceNo}
+    </select>
+
+    <select id="selectByParentResourceNo" resultMap="ResourceMap">
+        SELECT id, resource_no, parent_resource_no, resource_name, resource_type,
+               request_path, label, data_state, sort_no, icon,
+               create_time, update_time, remark, create_by, update_by
+        FROM sys_resource WHERE parent_resource_no = #{parentResourceNo}
+    </select>
+
+</mapper>

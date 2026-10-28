@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.FamilyMapper">
+
+    <!-- 初始化老人余额 -->
+    <insert id="insertBalance">
+        INSERT INTO balance (elder_id, elder_name, prepaid_balance, deposit_amount, arrears_amount, status, create_time)
+        VALUES (#{elderId}, #{elderName}, 0.00, 0.00, 0.00, 0, NOW())
+    </insert>
+
+    <!-- 更新老人基本信息 -->
+    <update id="updateElderInfo">
+        UPDATE elder SET
+            name = #{name},
+            phone = #{phone},
+            sex = #{sex},
+            age = #{age},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{elderId}
+    </update>
+
+    <!-- 更新老人床位 -->
+    <update id="updateElderBed">
+        UPDATE elder SET bed_number = #{bedNumber}, bed_id = #{bedId}, update_time = NOW()
+        WHERE id = #{elderId}
+    </update>
+
+    <!-- 更新老人状态 -->
+    <update id="updateElderStatus">
+        UPDATE elder SET status = #{status}, update_time = NOW()
+        WHERE id = #{elderId}
+    </update>
+
+    <!-- 更新床位状态 -->
+    <update id="updateBedStatus">
+        UPDATE bed SET bed_status = #{bedStatus}, update_time = NOW()
+        WHERE id = #{bedId}
+    </update>
+
+    <!-- 根据老人ID查询家属列表 -->
+    <select id="selectFamilyByElderId" resultType="java.util.HashMap">
+        SELECT
+            m.name,
+            m.phone,
+            me.remark AS kinship
+        FROM member_elder me
+        INNER JOIN member m ON me.member_id = m.id
+        WHERE me.elder_id = #{elderId}
+    </select>
+
+    <!-- 根据手机号查询客户 -->
+    <select id="selectMemberByPhone" resultType="com.zhuimeng.entity.Member">
+        SELECT id, phone, name, avatar, open_id, gender, create_time, update_time, create_by, update_by, remark
+        FROM member
+        WHERE phone = #{phone}
+        LIMIT 1
+    </select>
+
+    <!-- 创建客户 -->
+    <insert id="insertMember" parameterType="com.zhuimeng.entity.Member" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO member (phone, name, create_time)
+        VALUES (#{phone}, #{name}, NOW())
+    </insert>
+
+    <!-- 保存老人信息 -->
+    <insert id="insert" parameterType="com.zhuimeng.entity.Elder" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO elder
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null and name != ''">name,</if>
+            <if test="idCardNo != null and idCardNo != ''">id_card_no,</if>
+            <if test="image != null and image != ''">image,</if>
+            <if test="age != null and age != ''">age,</if>
+            <if test="sex != null and sex != ''">sex,</if>
+            <if test="phone != null and phone != ''">phone,</if>
+            <if test="status != null">status,</if>
+            <if test="bedNumber != null and bedNumber != ''">bed_number,</if>
+            <if test="bedId != null">bed_id,</if>
+            create_time
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="idCardNo != null and idCardNo != ''">#{idCardNo},</if>
+            <if test="image != null and image != ''">#{image},</if>
+            <if test="age != null and age != ''">#{age},</if>
+            <if test="sex != null and sex != ''">#{sex},</if>
+            <if test="phone != null and phone != ''">#{phone},</if>
+            <if test="status != null">#{status},</if>
+            <if test="bedNumber != null and bedNumber != ''">#{bedNumber},</if>
+            <if test="bedId != null">#{bedId},</if>
+            NOW()
+        </trim>
+    </insert>
+
+    <!-- 保存家庭成员关联 -->
+    <insert id="insertMemberElder" parameterType="com.zhuimeng.entity.MemberElder" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO member_elder (member_id, elder_id, remark, create_time)
+        VALUES (#{memberId}, #{elderId}, #{remark}, NOW())
+    </insert>
+
+    <!-- 根据老人id删除用户与老人关联信息 -->
+    <delete id="deleteMemberElder">
+        DELETE FROM member_elder WHERE elder_id = #{elderId}
+    </delete>
+
+    <!-- 根据老人id删除老人信息 -->
+    <delete id="delete">
+        DELETE FROM elder WHERE id = #{elderId}
+    </delete>
+
+    <!-- 根据身份证号查询老人信息 -->
+    <select id="selectByIdCard" resultType="com.zhuimeng.entity.Elder">
+        SELECT id, name, image, id_card_no, age, sex, status, phone,
+               create_time, update_time, create_by, update_by, remark,
+               bed_number, bed_id
+        FROM elder
+        WHERE id_card_no = #{idCard}
+        LIMIT 1
+    </select>
+
+    <!-- 根据身份证号查询老人id -->
+    <select id="selectId" resultType="java.lang.String">
+        SELECT id FROM elder WHERE id_card_no = #{idCard} LIMIT 1
+    </select>
+
+    <!-- 根据用户id(member_id)查询所有老人信息（含设备ID，子查询取一条设备防重复） -->
+    <select id="listAll" resultType="com.zhuimeng.vo.ElderDeviceVO">
+        SELECT e.id, e.name, e.image, e.id_card_no, e.age, e.sex, e.status, e.phone,
+               e.bed_number, e.bed_id, e.remark,
+               e.create_time, e.update_time,
+               me.id AS mid, me.remark AS mremark,
+               (SELECT d.id FROM device d
+                WHERE d.binding_location = e.id AND d.location_type = 0
+                LIMIT 1) AS iotId
+        FROM elder e
+                 INNER JOIN member_elder me ON e.id = me.elder_id
+        WHERE me.member_id = #{userId}
+        ORDER BY me.create_time DESC
+    </select>
+
+    <!-- 分页查询家人列表（含设备ID，子查询取一条设备防重复） -->
+    <select id="selectPage" resultType="com.zhuimeng.vo.ElderDeviceVO">
+        SELECT e.id, e.name, e.image, e.id_card_no, e.age, e.sex, e.status, e.phone,
+               e.bed_number, e.bed_id, e.remark,
+               e.create_time, e.update_time,
+               me.id AS mid, me.remark AS mremark,
+               (SELECT d.id FROM device d
+                WHERE d.binding_location = e.id AND d.location_type = 0
+                LIMIT 1) AS iotId
+        FROM elder e
+                 INNER JOIN member_elder me ON e.id = me.elder_id
+        WHERE me.member_id = #{userId}
+        ORDER BY me.create_time DESC
+    </select>
+
+    <!-- 根据老人id查询用户与老人关联信息 -->
+    <select id="selectMemberElder" resultType="com.zhuimeng.entity.MemberElder">
+        SELECT id, member_id, elder_id, create_time, update_time, create_by, update_by, remark
+        FROM member_elder
+        WHERE elder_id = #{elderId}
+    </select>
+
+    <!-- 根据用户id和老人id查询绑定关系（防重复绑定） -->
+    <select id="selectMemberElderByMemberAndElder" resultType="com.zhuimeng.entity.MemberElder">
+        SELECT id, member_id, elder_id, create_time, update_time, create_by, update_by, remark
+        FROM member_elder
+        WHERE member_id = #{memberId} AND elder_id = #{elderId}
+        LIMIT 1
+    </select>
+
+    <!-- 根据床位ID列表批量查询老人 -->
+    <select id="selectByBedIds" resultType="com.zhuimeng.entity.Elder">
+        SELECT id, name, image, id_card_no, age, sex, status, phone,
+               create_time, update_time, create_by, update_by, remark,
+               bed_number, bed_id
+        FROM elder
+        WHERE bed_id IN
+        <foreach collection="bedIds" item="bedId" open="(" separator="," close=")">
+            #{bedId}
+        </foreach>
+    </select>
+
+    <!-- ==================== 员工端老人管理 ==================== -->
+
+    <!-- 通用查询条件片段 -->
+    <sql id="elderQueryCondition">
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="idCard != null and idCard != ''">
+                AND id_card_no LIKE CONCAT('%', #{idCard}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <!-- 查询所有老人列表（支持姓名、身份证号模糊匹配） -->
+    <select id="selectAllElders" resultType="com.zhuimeng.entity.Elder">
+        SELECT id, name, image, id_card_no, age, sex, status, phone,
+               create_time, update_time, create_by, update_by, remark,
+               bed_number, bed_id
+        FROM elder
+        <include refid="elderQueryCondition"/>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据老人ID查询老人信息 -->
+    <select id="selectElderById" resultType="com.zhuimeng.entity.Elder">
+        SELECT id, name, image, id_card_no, age, sex, status, phone,
+               create_time, update_time, create_by, update_by, remark,
+               bed_number, bed_id
+        FROM elder
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据老人ID查询入住配置 -->
+    <select id="selectCheckInConfigByElderId" resultType="com.zhuimeng.entity.CheckInConfig">
+        SELECT id, elder_id, check_in_start_time, check_in_end_time,
+               nursing_level_id, bed_no, cost_start_time, cost_end_time,
+               deposit_amount, nursing_cost, bed_cost, other_cost,
+               medical_insurance_payment, government_subsidy,
+               create_time, update_time, create_by, update_by, remark
+        FROM check_in_config
+        WHERE elder_id = #{elderId}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- 删除老人旧的护理员绑定 -->
+    <delete id="deleteNursingByElderId">
+        DELETE FROM nursing_elder WHERE elder_id = #{elderId}
+    </delete>
+
+    <!-- 批量插入护理员绑定 -->
+    <insert id="insertNursing">
+        INSERT INTO nursing_elder (elder_id, nursing_id, create_time)
+        VALUES
+        <foreach collection="nursingIds" item="nursingId" separator=",">
+            (#{elderId}, #{nursingId}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 根据老人ID列表批量查询护理员 -->
+    <select id="selectNursingByElderIds" resultType="java.util.HashMap">
+        SELECT
+            ne.elder_id AS elderId,
+            u.id,
+            u.real_name AS realName
+        FROM nursing_elder ne
+        INNER JOIN sys_user u ON ne.nursing_id = u.id
+        WHERE ne.elder_id IN
+        <foreach collection="elderIds" item="elderId" open="(" separator="," close=")">
+            #{elderId}
+        </foreach>
+    </select>
+
+</mapper>

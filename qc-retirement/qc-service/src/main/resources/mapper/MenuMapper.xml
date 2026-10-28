@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.MenuMapper">
+
+    <select id="selectMenusByUserId" resultType="com.zhuimeng.entity.SysResource">
+        SELECT
+            r.resource_no,
+            r.parent_resource_no,
+            r.resource_name,
+            r.resource_type,
+            r.request_path,
+            r.icon,
+            r.sort_no,
+            r.data_state
+        FROM sys_resource r
+        INNER JOIN sys_role_resource rr ON r.resource_no = rr.resource_no
+        INNER JOIN sys_user_role ur ON rr.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+            AND r.data_state = '0'
+            AND rr.data_state = '0'
+            AND ur.data_state = '0'
+            AND r.resource_type IN ('m', 'c')
+        ORDER BY r.sort_no ASC
+    </select>
+
+    <select id="selectButtonsByUserId" resultType="com.zhuimeng.entity.SysResource">
+        SELECT
+            r.resource_no,
+            r.parent_resource_no,
+            r.resource_name,
+            r.resource_type,
+            r.request_path,
+            r.label,
+            r.sort_no,
+            r.data_state
+        FROM sys_resource r
+        INNER JOIN sys_role_resource rr ON r.resource_no = rr.resource_no
+        INNER JOIN sys_user_role ur ON rr.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+            AND r.data_state = '0'
+            AND rr.data_state = '0'
+            AND ur.data_state = '0'
+            AND r.resource_type = 'r'
+        ORDER BY r.sort_no ASC
+    </select>
+
+</mapper>

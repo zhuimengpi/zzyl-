@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.FloorMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <!-- 楼层 → 房间 → 床位 嵌套映射 -->
+    <resultMap id="FloorWithRoomAndBedMap" type="com.zhuimeng.entity.Floor">
+        <id column="f_id" property="id"/>
+        <result column="f_name" property="name"/>
+        <result column="f_code" property="code"/>
+        <result column="f_create_time" property="createTime"/>
+        <result column="f_update_time" property="updateTime"/>
+        <result column="f_create_by" property="createBy"/>
+        <result column="f_update_by" property="updateBy"/>
+        <result column="f_remark" property="remark"/>
+        <collection property="roomVoList" ofType="com.zhuimeng.entity.Room">
+            <id column="r_id" property="id"/>
+            <result column="r_code" property="code"/>
+            <result column="r_sort" property="sort"/>
+            <result column="r_type_name" property="typeName"/>
+            <result column="r_floor_id" property="floorId"/>
+            <result column="r_create_time" property="createTime"/>
+            <result column="r_is_deleted" property="isDeleted"/>
+            <collection property="bedVoList" ofType="com.zhuimeng.entity.Bed">
+                <id column="b_id" property="id"/>
+                <result column="b_bed_number" property="bedNumber"/>
+                <result column="b_bed_status" property="bedStatus"/>
+                <result column="b_sort" property="sort"/>
+                <result column="b_room_id" property="roomId"/>
+                <result column="b_create_time" property="createTime"/>
+                <result column="b_remark" property="remark"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <!-- ==================== 新增 ==================== -->
+
+    <!-- 添加楼层 -->
+    <insert id="add" parameterType="com.zhuimeng.entity.Floor" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO floor (name, code, create_time, create_by, remark)
+        VALUES (#{name}, #{code}, #{createTime}, #{createBy}, #{remark})
+    </insert>
+
+    <!-- ==================== 修改 ==================== -->
+
+    <!-- 编辑楼层 -->
+    <update id="update" parameterType="com.zhuimeng.entity.Floor">
+        UPDATE floor
+        SET name = #{name},
+            code = #{code},
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            remark = #{remark}
+        WHERE id = #{id}
+    </update>
+
+    <!-- ==================== 删除 ==================== -->
+
+    <!-- 删除楼层 -->
+    <delete id="delete">
+        DELETE FROM floor WHERE id = #{id}
+    </delete>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <!-- 获取楼层列表 -->
+    <select id="getAll" resultType="com.zhuimeng.entity.Floor">
+        SELECT id, name, code, create_time, update_time, create_by, update_by, remark
+        FROM floor
+        ORDER BY code ASC
+    </select>
+
+    <!-- 根据ID查询楼层详情 -->
+    <select id="getById" resultType="com.zhuimeng.entity.Floor">
+        SELECT id, name, code, create_time, update_time, create_by, update_by, remark
+        FROM floor
+        WHERE id = #{id}
+    </select>
+
+    <!-- 获取所有楼层及关联智能设备 -->
+    <select id="getAllFloorsWithDevice" resultType="com.zhuimeng.entity.Floor">
+        SELECT id, name, code, create_time, update_time, create_by, update_by, remark
+        FROM floor
+        ORDER BY code ASC
+    </select>
+
+    <!-- 获取所有楼层及关联护理员 -->
+    <select id="getAllFloorsWithNur" resultType="com.zhuimeng.entity.Floor">
+        SELECT id, name, code, create_time, update_time, create_by, update_by, remark
+        FROM floor
+        ORDER BY code ASC
+    </select>
+
+    <!-- 获取所有楼层、房间、床位完整结构（含所有床位状态） -->
+    <select id="getAllWithRoomAndBed" resultMap="FloorWithRoomAndBedMap">
+        SELECT
+            f.id AS f_id, f.name AS f_name, f.code AS f_code,
+            f.create_time AS f_create_time, f.update_time AS f_update_time,
+            f.create_by AS f_create_by, f.update_by AS f_update_by, f.remark AS f_remark,
+            r.id AS r_id, r.code AS r_code, r.sort AS r_sort,
+            r.type_name AS r_type_name, r.floor_id AS r_floor_id,
+            r.create_time AS r_create_time, r.is_deleted AS r_is_deleted,
+            b.id AS b_id, b.bed_number AS b_bed_number, b.bed_status AS b_bed_status,
+            b.sort AS b_sort, b.room_id AS b_room_id,
+            b.create_time AS b_create_time, b.remark AS b_remark
+        FROM floor f
+        LEFT JOIN room r ON f.id = r.floor_id AND r.is_deleted = 0
+        LEFT JOIN bed b ON r.id = b.room_id
+        ORDER BY f.code ASC, r.sort ASC, b.sort ASC
+    </select>
+
+    <!-- 按床位状态筛选楼层-房间-床位（仅返回含指定状态床位的楼层和房间） -->
+    <select id="getRoomAndBedByBedStatus" resultMap="FloorWithRoomAndBedMap">
+        SELECT
+            f.id AS f_id, f.name AS f_name, f.code AS f_code,
+            f.create_time AS f_create_time, f.update_time AS f_update_time,
+            f.create_by AS f_create_by, f.update_by AS f_update_by, f.remark AS f_remark,
+            r.id AS r_id, r.code AS r_code, r.sort AS r_sort,
+            r.type_name AS r_type_name, r.floor_id AS r_floor_id,
+            r.create_time AS r_create_time, r.is_deleted AS r_is_deleted,
+            b.id AS b_id, b.bed_number AS b_bed_number, b.bed_status AS b_bed_status,
+            b.sort AS b_sort, b.room_id AS b_room_id,
+            b.create_time AS b_create_time, b.remark AS b_remark
+        FROM floor f
+        INNER JOIN room r ON f.id = r.floor_id AND r.is_deleted = 0
+        INNER JOIN bed b ON r.id = b.room_id AND b.bed_status = #{status}
+        ORDER BY f.code ASC, r.sort ASC, b.sort ASC
+    </select>
+
+</mapper>

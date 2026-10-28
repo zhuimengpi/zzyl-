@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.ProjectMapper">
+
+    <!-- 服务项目列表（分页，支持名称模糊搜索） -->
+    <select id="projectPage" resultType="com.zhuimeng.entity.NursingProject">
+        SELECT id, name, image, price, unit, nursing_requirement, order_no,
+               status, create_by, update_by, remark, create_time, update_time
+        FROM nursing_project
+        WHERE status = 1
+        ORDER BY order_no ASC
+    </select>
+
+    <!-- 服务项目详情 -->
+    <select id="projectDetail" resultType="com.zhuimeng.entity.NursingProject">
+        SELECT id, name, image, price, unit, nursing_requirement, order_no,
+               status, create_by, update_by, remark, create_time, update_time
+        FROM nursing_project
+        WHERE id = #{id}
+    </select>
+
+</mapper>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.BedMapper">
+
+    <!-- ==================== 新增 ==================== -->
+
+    <!-- 添加床位（返回插入后的主键ID） -->
+    <insert id="create" parameterType="com.zhuimeng.entity.Bed" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO bed (
+            bed_number, bed_status, sort, room_id,
+            create_time, create_by, remark
+        ) VALUES (
+            #{bedNumber}, #{bedStatus}, #{sort}, #{roomId},
+            #{createTime}, #{createBy}, #{remark}
+        )
+    </insert>
+
+    <!-- ==================== 修改 ==================== -->
+
+    <!-- 编辑床位 -->
+    <update id="update" parameterType="com.zhuimeng.entity.Bed">
+        UPDATE bed
+        SET
+            bed_number = #{bedNumber},
+            bed_status = #{bedStatus},
+            sort = #{sort},
+            room_id = #{roomId},
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            remark = #{remark}
+        WHERE id = #{id} and update_time = #{oldDate}
+    </update>
+
+    <!-- ==================== 删除 ==================== -->
+
+    <!-- 删除床位（物理删除） -->
+    <delete id="delete">
+        DELETE FROM bed WHERE id = #{id}
+    </delete>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <!-- 根据房间ID查询床位列表 -->
+    <select id="readRoom" resultType="com.zhuimeng.entity.Bed">
+        SELECT id, bed_number, bed_status, sort, room_id,
+               create_time, update_time, create_by, update_by, remark
+        FROM bed
+        WHERE room_id = #{id}
+        ORDER BY sort ASC, id DESC
+    </select>
+
+    <!-- 根据床位ID查询床位详情 -->
+    <select id="read" resultType="com.zhuimeng.entity.Bed">
+        SELECT id, bed_number, bed_status, sort, room_id,
+               create_time, update_time, create_by, update_by, remark
+        FROM bed
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据房间ID列表批量查询床位 -->
+    <select id="selectByRoomIds" resultType="com.zhuimeng.entity.Bed">
+        SELECT id, bed_number, bed_status, sort, room_id,
+               create_time, update_time, create_by, update_by, remark
+        FROM bed
+        WHERE room_id IN
+        <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+            #{roomId}
+        </foreach>
+        ORDER BY sort ASC, id DESC
+    </select>
+
+</mapper>

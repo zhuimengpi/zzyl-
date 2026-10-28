@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.OrderMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <!-- 订单分页VO -->
+    <resultMap id="OrderPageVOMap" type="com.zhuimeng.vo.OrderPageVO">
+        <id column="id" property="id"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="amount" property="amount"/>
+        <result column="status" property="status"/>
+        <result column="payment_status" property="paymentStatus"/>
+        <result column="trading_order_no" property="tradingOrderNo"/>
+        <result column="estimated_arrival_time" property="estimatedArrivalTime"/>
+        <result column="create_time" property="createTime"/>
+        <association property="elderVo" javaType="com.zhuimeng.vo.ElderVO">
+            <result column="elder_name" property="name"/>
+        </association>
+        <association property="bedVo" javaType="java.util.HashMap">
+            <result column="bed_number" property="bedNumber"/>
+        </association>
+        <association property="nursingProjectVo" javaType="com.zhuimeng.vo.NursingProjectVO">
+            <result column="project_name" property="name"/>
+            <result column="project_image" property="image"/>
+        </association>
+        <association property="memberVo" javaType="java.util.HashMap">
+            <result column="member_name" property="name"/>
+        </association>
+    </resultMap>
+
+    <!-- 订单详情VO -->
+    <resultMap id="OrderVOMap" type="com.zhuimeng.vo.OrderVO">
+        <id column="id" property="id"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="amount" property="amount"/>
+        <result column="status" property="status"/>
+        <result column="payment_status" property="paymentStatus"/>
+        <result column="trading_order_no" property="tradingOrderNo"/>
+        <result column="estimated_arrival_time" property="estimatedArrivalTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+        <result column="reason" property="reason"/>
+        <association property="elderVo" javaType="com.zhuimeng.vo.ElderVO">
+            <result column="elder_name" property="name"/>
+        </association>
+        <association property="bedVo" javaType="java.util.HashMap">
+            <result column="bed_number" property="bedNumber"/>
+        </association>
+        <association property="nursingProjectVo" javaType="com.zhuimeng.vo.NursingProjectVO">
+            <result column="project_name" property="name"/>
+            <result column="project_image" property="image"/>
+            <result column="project_unit" property="unit"/>
+        </association>
+        <association property="memberVo" javaType="java.util.HashMap">
+            <result column="member_name" property="name"/>
+            <result column="member_phone" property="phone"/>
+        </association>
+        <association property="nursingTaskVo" javaType="com.zhuimeng.vo.NursingTaskVO">
+            <result column="task_creator" property="creator"/>
+            <result column="task_update_time" property="updateTime"/>
+            <result column="task_mark" property="mark"/>
+            <result column="task_image" property="taskImage"/>
+        </association>
+        <association property="refundRecordVo" javaType="com.zhuimeng.vo.RefundRecordVO">
+            <result column="refund_status" property="refundStatus"/>
+            <result column="refund_amount" property="refundAmount"/>
+            <result column="refund_msg" property="refundMsg"/>
+            <result column="refund_memo" property="memo"/>
+            <result column="refund_create_time" property="createTime"/>
+            <result column="refund_update_time" property="updateTime"/>
+        </association>
+        <association property="tradingVo" javaType="com.zhuimeng.vo.TradingVO">
+            <result column="place_order_json" property="placeOrderJson"/>
+            <result column="trading_update_time" property="updateTime"/>
+        </association>
+    </resultMap>
+
+    <!-- ==================== CRUD ==================== -->
+
+    <!-- 创建订单 -->
+    <insert id="insert" parameterType="com.zhuimeng.entity.Order" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `order` (
+            trading_order_no, payment_status, amount, refund, is_refund,
+            member_id, project_id, elder_id, estimated_arrival_time, mark,
+            reason, status, create_time, update_time, create_by, update_by,
+            remark, view_status, order_no, o_create_type
+        ) VALUES (
+            #{tradingOrderNo}, #{paymentStatus}, #{amount}, #{refund}, #{isRefund},
+            #{memberId}, #{projectId}, #{elderId}, #{estimatedArrivalTime}, #{mark},
+            #{reason}, #{status}, #{createTime}, #{updateTime}, #{createBy}, #{updateBy},
+            #{remark}, #{viewStatus}, #{orderNo}, #{oCreateType}
+        )
+    </insert>
+
+    <!-- 订单列表（分页，按状态筛选） -->
+    <select id="selectByStatus" resultMap="OrderPageVOMap">
+        SELECT
+            o.id,
+            o.order_no,
+            o.amount,
+            o.status,
+            o.payment_status,
+            o.trading_order_no,
+            o.estimated_arrival_time,
+            o.create_time,
+            e.name AS elder_name,
+            e.bed_number,
+            np.name AS project_name,
+            np.image AS project_image,
+            m.name AS member_name
+        FROM `order` o
+        LEFT JOIN elder e ON o.elder_id = e.id
+        LEFT JOIN nursing_project np ON o.project_id = np.id
+        LEFT JOIN member m ON o.member_id = m.id
+        WHERE o.view_status = '0'
+        <if test="status != null and status != ''">
+            AND o.status = #{status}
+        </if>
+        ORDER BY o.create_time DESC
+    </select>
+
+    <!-- 订单详情（完整信息） -->
+    <select id="selectById" resultMap="OrderVOMap">
+        SELECT
+            o.id,
+            o.order_no,
+            o.amount,
+            o.status,
+            o.payment_status,
+            o.trading_order_no,
+            o.estimated_arrival_time,
+            o.create_time,
+            o.update_time,
+            o.remark,
+            o.reason,
+            e.name AS elder_name,
+            e.bed_number,
+            np.name AS project_name,
+            np.image AS project_image,
+            np.unit AS project_unit,
+            m.name AS member_name,
+            m.phone AS member_phone,
+            u.real_name AS task_creator,
+            nt.update_time AS task_update_time,
+            nt.mark AS task_mark,
+            nt.task_image,
+            rr.refund_status,
+            rr.refund_amount,
+            rr.refund_msg,
+            rr.memo AS refund_memo,
+            rr.create_time AS refund_create_time,
+            rr.update_time AS refund_update_time,
+            t.place_order_json,
+            t.update_time AS trading_update_time
+        FROM `order` o
+        LEFT JOIN elder e ON o.elder_id = e.id
+        LEFT JOIN nursing_project np ON o.project_id = np.id
+        LEFT JOIN member m ON o.member_id = m.id
+        LEFT JOIN nursing_task nt ON o.order_no = nt.rel_no AND nt.task_type = 1
+        LEFT JOIN sys_user u ON nt.create_by = u.id
+        LEFT JOIN refund_record rr ON o.order_no = rr.product_order_no
+        LEFT JOIN trading t ON o.trading_order_no = t.trading_order_no
+        WHERE o.id = #{id}
+    </select>
+
+    <!-- 查询订单（entity） -->
+    <select id="selectOrderById" resultType="com.zhuimeng.entity.Order">
+        SELECT
+            id, trading_order_no, payment_status, amount, refund, is_refund,
+            member_id, project_id, elder_id, estimated_arrival_time, mark,
+            reason, status, create_time, update_time, create_by, update_by,
+            remark, view_status, order_no, o_create_type
+        FROM `order`
+        WHERE id = #{orderId}
+    </select>
+
+    <!-- 更新订单 -->
+    <update id="updateOrder" parameterType="com.zhuimeng.entity.Order">
+        UPDATE `order`
+        SET
+            payment_status = #{paymentStatus},
+            amount = #{amount},
+            refund = #{refund},
+            is_refund = #{isRefund},
+            status = #{status},
+            reason = #{reason},
+            mark = #{mark},
+            remark = #{remark},
+            view_status = #{viewStatus},
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            o_create_type = #{oCreateType}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据交易单号查询订单 -->
+    <select id="selectByTradingOrderNo" resultType="com.zhuimeng.entity.Order">
+        SELECT
+            id, trading_order_no, payment_status, amount, refund, is_refund,
+            member_id, project_id, elder_id, estimated_arrival_time, mark,
+            reason, status, create_time, update_time, create_by, update_by,
+            remark, view_status, order_no, o_create_type
+        FROM `order`
+        WHERE trading_order_no = #{tradingOrderNo}
+    </select>
+
+    <!-- 删除订单（软删除） -->
+    <update id="deleteOrder">
+        UPDATE `order`
+        SET view_status = '1',
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            status = '4'
+        WHERE id = #{id}
+    </update>
+
+    <!-- 精准支付过期（根据订单号关闭订单） -->
+    <update id="updateTimeoutOrder">
+        UPDATE `order`
+        SET status = '4',
+            payment_status = '3',
+            update_time = NOW(),
+            o_create_type = '2'
+        WHERE id = #{orderId}
+    </update>
+
+    <!-- 支付过期定时任务（批量关闭超时未支付订单） -->
+    <update id="updateOrderStatus">
+        UPDATE `order`
+        SET status = '4',
+            payment_status = '3',
+            update_time = NOW(),
+            o_create_type = '2'
+        WHERE status = '0'
+          AND payment_status = '1'
+          AND TIMESTAMPDIFF(MINUTE, create_time, NOW()) > 15
+    </update>
+
+    <!-- ==================== 员工端订单管理 ==================== -->
+
+    <!-- 订单搜索条件片段 -->
+    <sql id="orderSearchCondition">
+        <where>
+            o.view_status = '0'
+            <if test="status != null and status != ''">
+                AND o.status = #{status}
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                AND o.order_no LIKE CONCAT('%', #{orderNo}, '%')
+            </if>
+            <if test="elderlyName != null and elderlyName != ''">
+                AND e.name LIKE CONCAT('%', #{elderlyName}, '%')
+            </if>
+            <if test="creator != null and creator != ''">
+                AND u.real_name LIKE CONCAT('%', #{creator}, '%')
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND o.create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND o.create_time &lt;= #{endTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 订单搜索（多条件分页） -->
+    <select id="searchOrders" resultMap="OrderPageVOMap">
+        SELECT
+            o.id,
+            o.order_no,
+            o.amount,
+            o.status,
+            o.payment_status,
+            o.trading_order_no,
+            o.estimated_arrival_time,
+            o.create_time,
+            e.name AS elder_name,
+            e.bed_number,
+            np.name AS project_name,
+            np.image AS project_image,
+            m.name AS member_name
+        FROM `order` o
+        LEFT JOIN elder e ON o.elder_id = e.id
+        LEFT JOIN nursing_project np ON o.project_id = np.id
+        LEFT JOIN member m ON o.member_id = m.id
+        LEFT JOIN sys_user u ON o.create_by = u.id
+        <include refid="orderSearchCondition"/>
+        ORDER BY o.create_time DESC
+    </select>
+
+    <!-- 退款记录分页查询 -->
+    <select id="searchRefundRecords" resultType="java.util.HashMap">
+        SELECT
+            rr.id,
+            rr.refund_no AS refundNo,
+            rr.product_order_no AS orderNo,
+            rr.refund_amount AS refundAmount,
+            rr.refund_status AS refundStatus,
+            rr.refund_msg AS refundMsg,
+            rr.memo,
+            rr.create_time AS createTime,
+            rr.update_time AS updateTime,
+            o.amount AS orderAmount,
+            e.name AS elderName,
+            np.name AS projectName,
+            u.real_name AS creator
+        FROM refund_record rr
+        INNER JOIN `order` o ON rr.product_order_no = o.order_no
+        LEFT JOIN elder e ON o.elder_id = e.id
+        LEFT JOIN nursing_project np ON o.project_id = np.id
+        LEFT JOIN sys_user u ON rr.create_by = u.id
+        <where>
+            <if test="refundStatus != null and refundStatus != ''">
+                AND rr.refund_status = #{refundStatus}
+            </if>
+            <if test="refundNoStr != null and refundNoStr != ''">
+                AND rr.refund_no LIKE CONCAT('%', #{refundNoStr}, '%')
+            </if>
+            <if test="orderNo != null and orderNo != ''">
+                AND rr.product_order_no LIKE CONCAT('%', #{orderNo}, '%')
+            </if>
+            <if test="creator != null and creator != ''">
+                AND u.real_name LIKE CONCAT('%', #{creator}, '%')
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND rr.create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND rr.create_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY rr.create_time DESC
+    </select>
+
+    <!-- 插入退款记录 -->
+    <insert id="insertRefundRecord">
+        INSERT INTO refund_record (refund_no, product_order_no, refund_amount, refund_status, memo, create_by, create_time)
+        VALUES (#{refundNo}, #{productOrderNo}, #{refundAmount}, #{refundStatus}, #{memo}, #{createBy}, NOW())
+    </insert>
+
+    <!-- 根据退款单号查询退款记录 -->
+    <select id="selectRefundByNo" resultType="java.util.HashMap">
+        SELECT
+            rr.id,
+            rr.refund_no AS refundNo,
+            rr.product_order_no AS orderNo,
+            rr.refund_amount AS refundAmount,
+            rr.refund_status AS refundStatus,
+            rr.refund_msg AS refundMsg,
+            rr.memo,
+            rr.create_time AS createTime,
+            rr.update_time AS updateTime,
+            o.amount AS orderAmount,
+            o.status AS orderStatus,
+            e.name AS elderName,
+            np.name AS projectName
+        FROM refund_record rr
+        INNER JOIN `order` o ON rr.product_order_no = o.order_no
+        LEFT JOIN elder e ON o.elder_id = e.id
+        LEFT JOIN nursing_project np ON o.project_id = np.id
+        WHERE rr.refund_no = #{refundRecordNo}
+        LIMIT 1
+    </select>
+
+</mapper>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.NursingLevelMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <resultMap id="NursingLevelMap" type="com.zhuimeng.entity.NursingLevel">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="lplan_id" property="lplanId"/>
+        <result column="fee" property="fee"/>
+        <result column="status" property="status"/>
+        <result column="description" property="description"/>
+        <result column="create_time" property="createTime"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="remark" property="remark"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- ==================== 新增 ==================== -->
+
+    <insert id="insert" parameterType="com.zhuimeng.entity.NursingLevel" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO nursing_level (
+            name, lplan_id, fee, status, description,
+            create_time, create_by, remark
+        ) VALUES (
+            #{name}, #{lplanId}, #{fee}, #{status}, #{description},
+            #{createTime}, #{createBy}, #{remark}
+        )
+    </insert>
+
+    <!-- ==================== 修改 ==================== -->
+
+    <update id="updateById" parameterType="com.zhuimeng.entity.NursingLevel">
+        UPDATE nursing_level
+        SET
+            name = #{name},
+            lplan_id = #{lplanId},
+            fee = #{fee},
+            status = #{status},
+            description = #{description},
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            remark = #{remark}
+        WHERE id = #{id} AND update_time = #{oldUpdateTime}
+    </update>
+
+    <delete id="deleteById"></delete>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <select id="listAll" resultMap="NursingLevelMap">
+        SELECT
+            id, name, lplan_id, fee, status, description,
+            create_time, create_by, update_by, remark, update_time
+        FROM `nursing_level`
+        ORDER BY id ASC
+    </select>
+
+    <select id="selectById" resultMap="NursingLevelMap">
+        SELECT
+            id, name, lplan_id, fee, status, description,
+            create_time, create_by, update_by, remark, update_time
+        FROM `nursing_level`
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByName" resultType="com.zhuimeng.entity.NursingLevel">
+        SELECT
+            id, name, lplan_id, fee, status, description,
+            create_time, create_by, update_by, remark, update_time
+        FROM `nursing_level`
+        WHERE name = #{name}
+    </select>
+
+</mapper>

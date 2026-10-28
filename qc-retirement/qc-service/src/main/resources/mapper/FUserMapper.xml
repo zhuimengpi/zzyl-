@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.FUserMapper">
+    <insert id="insert" parameterType="com.zhuimeng.entity.Member" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO member
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="openId != null and openId != ''">open_id,</if>
+            <if test="name != null and name != ''">name,</if>
+            <if test="phone != null and phone != ''">phone,</if>
+            <if test="avatar != null and avatar != ''">avatar,</if>
+            <if test="gender != null">gender,</if>
+            create_time
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="openId != null and openId != ''">#{openId},</if>
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="phone != null and phone != ''">#{phone},</if>
+            <if test="avatar != null and avatar != ''">#{avatar},</if>
+            <if test="gender != null">#{gender},</if>
+            NOW()
+        </trim>
+    </insert>
+
+    <select id="selectIdByUserName" resultType="java.lang.Long">
+        SELECT id FROM member WHERE name = #{userName}
+    </select>
+
+    <select id="selectIdByOpenId" resultType="java.lang.Long">
+        SELECT id FROM member WHERE open_id = #{openId}
+    </select>
+
+    <select id="getMemberByUserId" resultType="com.zhuimeng.entity.Member">
+        SELECT id, phone, name, avatar, open_id, gender, create_time, update_time, create_by, update_by, remark
+        FROM member
+        WHERE id = #{userId}
+    </select>
+
+</mapper>

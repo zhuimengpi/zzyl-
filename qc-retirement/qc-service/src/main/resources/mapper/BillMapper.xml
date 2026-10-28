@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.BillMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <!-- 账单实体映射 -->
+    <resultMap id="BillMap" type="com.zhuimeng.entity.Bill">
+        <id column="id" property="id"/>
+        <result column="bill_no" property="billNo"/>
+        <result column="trading_order_no" property="tradingOrderNo"/>
+        <result column="bill_type" property="billType"/>
+        <result column="bill_month" property="billMonth"/>
+        <result column="elder_id" property="elderId"/>
+        <result column="bill_amount" property="billAmount"/>
+        <result column="payable_amount" property="payableAmount"/>
+        <result column="prepaid_amount" property="prepaidAmount"/>
+        <result column="deposit_amount" property="depositAmount"/>
+        <result column="current_cost" property="currentCost"/>
+        <result column="payment_deadline" property="paymentDeadline"/>
+        <result column="transaction_status" property="transactionStatus"/>
+        <result column="bill_start_time" property="billStartTime"/>
+        <result column="bill_end_time" property="billEndTime"/>
+        <result column="total_days" property="totalDays"/>
+        <result column="create_time" property="createTime"/>
+        <result column="lname" property="lname"/>
+        <result column="type_name" property="typeName"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- 账单列表VO映射（含老人姓名） -->
+    <resultMap id="BillListVOMap" type="com.zhuimeng.vo.BillVO">
+        <id column="id" property="id"/>
+        <result column="bill_no" property="billNo"/>
+        <result column="bill_type" property="billType"/>
+        <result column="bill_month" property="billMonth"/>
+        <result column="bill_amount" property="billAmount"/>
+        <result column="payable_amount" property="payableAmount"/>
+        <result column="transaction_status" property="transactionStatus"/>
+        <result column="create_time" property="createTime"/>
+        <result column="payment_deadline" property="paymentDeadline"/>
+        <association property="elderVo" javaType="com.zhuimeng.vo.ElderVO">
+            <result column="elder_name" property="name"/>
+        </association>
+    </resultMap>
+
+    <!-- 账单详情VO映射（含入住配置） -->
+    <resultMap id="BillDetailVOMap" type="com.zhuimeng.vo.BillVO">
+        <id column="id" property="id"/>
+        <result column="bill_no" property="billNo"/>
+        <result column="bill_type" property="billType"/>
+        <result column="bill_month" property="billMonth"/>
+        <result column="bill_amount" property="billAmount"/>
+        <result column="payable_amount" property="payableAmount"/>
+        <result column="transaction_status" property="transactionStatus"/>
+        <result column="create_time" property="createTime"/>
+        <result column="payment_deadline" property="paymentDeadline"/>
+        <result column="current_cost" property="currentCost"/>
+        <result column="deposit_amount" property="depositAmount"/>
+        <result column="prepaid_amount" property="prepaidAmount"/>
+        <result column="bill_start_time" property="billStartTime"/>
+        <result column="bill_end_time" property="billEndTime"/>
+        <result column="total_days" property="totalDays"/>
+        <result column="lname" property="lname"/>
+        <result column="type_name" property="typeName"/>
+        <result column="creator" property="creator"/>
+        <result column="memberCreator" property="memberCreator"/>
+        <result column="orderNo" property="orderNo"/>
+        <result column="orderId" property="orderId"/>
+        <result column="remark" property="remark"/>
+        <association property="elderVo" javaType="com.zhuimeng.vo.ElderVO">
+            <result column="elder_name" property="name"/>
+            <result column="elder_id_card_no" property="idCardNo"/>
+            <result column="elder_image" property="image"/>
+        </association>
+        <association property="checkInConfigVo" javaType="com.zhuimeng.vo.CheckInConfigVO">
+            <result column="bed_cost" property="bedCost"/>
+            <result column="nursing_cost" property="nursingCost"/>
+            <result column="other_cost" property="otherCost"/>
+            <result column="medical_insurance_payment" property="medicalInsurancePayment"/>
+            <result column="government_subsidy" property="governmentSubsidy"/>
+            <result column="month_cost" property="monthCost"/>
+            <result column="add1" property="add1"/>
+            <result column="add2" property="add2"/>
+            <result column="cost_start_time" property="costStartTime"/>
+        </association>
+    </resultMap>
+
+    <!-- ==================== CRUD ==================== -->
+
+    <!-- 查询账单列表（含老人姓名） -->
+    <select id="selectBillVOList" resultMap="BillListVOMap">
+        SELECT
+            b.id, b.bill_no, b.bill_type, b.bill_month,
+            b.bill_amount, b.payable_amount,
+            b.transaction_status, b.create_time, b.payment_deadline,
+            e.name AS elder_name
+        FROM `bill` b
+        LEFT JOIN elder e ON b.elder_id = e.id
+        WHERE 1 = 1
+        <if test="transactionStatus != null and transactionStatus >= 0">
+            AND b.transaction_status = #{transactionStatus}
+        </if>
+        <if test="elderId != null">
+            AND b.elder_id = #{elderId}
+        </if>
+        ORDER BY b.create_time DESC
+    </select>
+
+    <!-- 查询账单详情（含入住配置） -->
+    <select id="selectBillVODetail" resultMap="BillDetailVOMap">
+        SELECT
+            b.id, b.bill_no, b.bill_type, b.bill_month,
+            b.bill_amount, b.payable_amount, b.current_cost,
+            b.deposit_amount, b.prepaid_amount,
+            b.transaction_status, b.create_time, b.payment_deadline,
+            b.bill_start_time, b.bill_end_time, b.total_days,
+            b.lname, b.type_name, b.remark,
+            e.name AS elder_name,
+            e.id_card_no AS elder_id_card_no,
+            e.image AS elder_image,
+            cic.bed_cost, cic.nursing_cost, cic.other_cost,
+            cic.medical_insurance_payment, cic.government_subsidy,
+            cic.cost_start_time AS cost_start_time,
+            COALESCE(cic.bed_cost, 0) + COALESCE(cic.nursing_cost, 0) + COALESCE(cic.other_cost, 0)
+                - COALESCE(cic.medical_insurance_payment, 0) - COALESCE(cic.government_subsidy, 0) AS month_cost,
+            COALESCE(cic.bed_cost, 0) + COALESCE(cic.nursing_cost, 0) + COALESCE(cic.other_cost, 0) AS add1,
+            COALESCE(cic.medical_insurance_payment, 0) + COALESCE(cic.government_subsidy, 0) AS add2,
+            creator.real_name AS creator,
+            m.name AS memberCreator,
+            o.order_no AS orderNo,
+            o.id AS orderId
+        FROM bill b
+        LEFT JOIN elder e ON b.elder_id = e.id
+        LEFT JOIN check_in_config cic ON b.elder_id = cic.elder_id
+        LEFT JOIN sys_user creator ON b.create_by = creator.id
+        LEFT JOIN `order` o ON b.trading_order_no = o.trading_order_no AND b.trading_order_no > 0
+        LEFT JOIN `member` m ON o.member_id = m.id
+        WHERE b.id = #{id}
+        LIMIT 1
+    </select>
+
+    <!-- 查询账单列表（分页，按状态和老人筛选） -->
+    <select id="billList" resultMap="BillMap">
+        SELECT
+            id, bill_no, trading_order_no, bill_type, bill_month,
+            elder_id, bill_amount, payable_amount, prepaid_amount,
+            deposit_amount, current_cost, payment_deadline,
+            transaction_status, bill_start_time, bill_end_time,
+            total_days, create_time, lname, type_name,
+            update_time, create_by, update_by, remark
+        FROM `bill`
+        WHERE 1 = 1
+        <if test="transactionStatus != null">
+            AND transaction_status = #{transactionStatus}
+        </if>
+        <if test="elderId != null">
+            AND elder_id = #{elderId}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 插入账单 -->
+    <insert id="insertBill" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO bill (
+            bill_no, bill_type, bill_month, elder_id,
+            bill_amount, payable_amount, current_cost,
+            deposit_amount, prepaid_amount,
+            payment_deadline, transaction_status,
+            bill_start_time, bill_end_time, total_days,
+            lname, type_name, create_time, create_by
+        ) VALUES (
+            #{billNo}, #{billType}, #{billMonth}, #{elderId},
+            #{billAmount}, #{payableAmount}, #{currentCost},
+            #{depositAmount}, #{prepaidAmount},
+            #{paymentDeadline}, #{transactionStatus},
+            #{billStartTime}, #{billEndTime}, #{totalDays},
+            #{lname}, #{typeName}, NOW(), #{createBy}
+        )
+    </insert>
+
+    <!-- 更新账单 -->
+    <update id="updateBill" parameterType="com.zhuimeng.entity.Bill">
+        UPDATE `bill`
+        SET
+            transaction_status = #{transactionStatus},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询账单 -->
+    <select id="selectById" resultMap="BillMap">
+        SELECT
+            id, bill_no, trading_order_no, bill_type, bill_month,
+            elder_id, bill_amount, payable_amount, prepaid_amount,
+            deposit_amount, current_cost, payment_deadline,
+            transaction_status, bill_start_time, bill_end_time,
+            total_days, create_time, lname, type_name,
+            update_time, create_by, update_by, remark
+        FROM `bill`
+        WHERE id = #{id}
+    </select>
+
+    <!-- ==================== 分页查询账单（多条件） ==================== -->
+
+    <select id="selectBillPage" resultType="java.util.HashMap">
+        SELECT
+            b.id, b.bill_no AS billNo, b.bill_type AS billType,
+            b.bill_month AS billMonth, b.bill_amount AS billAmount,
+            b.payable_amount AS payableAmount,
+            b.transaction_status AS transactionStatus,
+            b.create_time AS createTime, b.payment_deadline AS paymentDeadline,
+            e.name AS elderName,
+            e.id_card_no AS elderIdCardNo
+        FROM bill b
+        LEFT JOIN elder e ON b.elder_id = e.id
+        WHERE 1 = 1
+        <if test="transactionStatus != null and transactionStatus >= 0">
+            AND b.transaction_status = #{transactionStatus}
+        </if>
+        <if test="billNo != null and billNo != ''">
+            AND b.bill_no LIKE CONCAT('%', #{billNo}, '%')
+        </if>
+        <if test="elderName != null and elderName != ''">
+            AND e.name LIKE CONCAT('%', #{elderName}, '%')
+        </if>
+        <if test="elderIdCard != null and elderIdCard != ''">
+            AND e.id_card_no LIKE CONCAT('%', #{elderIdCard}, '%')
+        </if>
+        ORDER BY b.create_time DESC
+    </select>
+
+    <!-- ==================== 欠费查询 ==================== -->
+
+    <select id="selectArrearsList" resultType="java.util.HashMap">
+        SELECT
+            b.id, b.bill_no AS billNo, b.bill_month AS billMonth,
+            b.payable_amount AS payableAmount, b.payment_deadline AS paymentDeadline,
+            COALESCE(SUM(b.payable_amount) OVER (PARTITION BY b.elder_id), b.payable_amount) AS total,
+            e.name AS elderName,
+            e.bed_number AS bedNumber
+        FROM bill b
+        INNER JOIN elder e ON b.elder_id = e.id
+        WHERE b.transaction_status = 0
+        <if test="elderName != null and elderName != ''">
+            AND e.name LIKE CONCAT('%', #{elderName}, '%')
+        </if>
+        ORDER BY b.payment_deadline ASC
+    </select>
+
+    <!-- ==================== 预付费充值记录 ==================== -->
+
+    <select id="selectPrepaidRechargePage" resultType="java.util.HashMap">
+        SELECT
+            pr.id, pr.prepaid_recharge_no AS prepaidRechargeNo,
+            pr.recharge_amount AS rechargeAmount,
+            pr.recharge_voucher AS rechargeVoucher,
+            pr.recharge_method AS rechargeMethod,
+            pr.remark, pr.create_time AS createTime,
+            e.name AS elderName, e.bed_number AS bedNo,
+            creator.real_name AS creator
+        FROM prepaid_recharge_record pr
+        INNER JOIN elder e ON pr.elder_id = e.id
+        LEFT JOIN sys_user creator ON pr.create_by = creator.id
+        WHERE 1 = 1
+        <if test="elderName != null and elderName != ''">
+            AND e.name LIKE CONCAT('%', #{elderName}, '%')
+        </if>
+        ORDER BY pr.create_time DESC
+    </select>
+
+    <insert id="insertPrepaidRecharge">
+        INSERT INTO prepaid_recharge_record (
+            recharge_amount, recharge_voucher, recharge_method,
+            elder_id, prepaid_recharge_no, remark, create_time, create_by
+        ) VALUES (
+            #{rechargeAmount}, #{rechargeVoucher}, #{rechargeMethod},
+            #{elderId}, #{prepaidRechargeNo}, #{remark}, NOW(), #{createBy}
+        )
+    </insert>
+
+    <!-- ==================== 余额分页查询 ==================== -->
+
+    <select id="selectBalancePage" resultType="java.util.HashMap">
+        SELECT
+            bal.id, bal.elder_name AS elderName, bal.bed_no AS bedNo,
+            bal.prepaid_balance AS prepaidBalance,
+            bal.deposit_amount AS depositAmount,
+            bal.arrears_amount AS arrearsAmount,
+            bal.update_time AS updateTime
+        FROM balance bal
+        WHERE 1 = 1
+        <if test="elderName != null and elderName != ''">
+            AND bal.elder_name LIKE CONCAT('%', #{elderName}, '%')
+        </if>
+        ORDER BY bal.update_time DESC
+    </select>
+
+    <!-- ==================== 退住清算 ==================== -->
+
+    <select id="selectArrearsBills" resultType="java.util.HashMap">
+        SELECT
+            b.bill_no AS code, b.bill_type AS type,
+            b.bill_month AS billMonth, b.payable_amount AS amount
+        FROM bill b
+        WHERE b.elder_id = #{elderId}
+          AND b.transaction_status = 0
+          AND b.bill_type = 0
+        ORDER BY b.bill_month ASC
+    </select>
+
+    <select id="selectUnpaidBills" resultType="java.util.HashMap">
+        SELECT
+            b.bill_no AS code, b.lname AS nursingName,
+            b.payable_amount AS amount
+        FROM bill b
+        WHERE b.elder_id = #{elderId}
+          AND b.transaction_status = 0
+          AND b.bill_type = 1
+        ORDER BY b.create_time ASC
+    </select>
+
+    <select id="selectDueBackBills" resultType="java.util.HashMap">
+        SELECT
+            b.bill_no AS code, b.bill_type AS type,
+            b.bill_month AS billMonth, b.payable_amount AS amount,
+            b.lname AS nursingName,
+            b.total_days AS totalDays,
+            DATEDIFF(b.bill_end_time, #{checkOutTime}) AS dueBackDay,
+            DATEDIFF(#{checkOutTime}, b.bill_start_time) AS realDay
+        FROM bill b
+        WHERE b.elder_id = #{elderId}
+          AND b.transaction_status = 1
+          AND b.bill_type = 0
+          AND b.bill_end_time &gt; #{checkOutTime}
+        ORDER BY b.bill_month ASC
+    </select>
+
+    <select id="selectBalanceByElderId" resultType="java.util.HashMap">
+        SELECT
+            id, prepaid_balance AS prepaidBalance,
+            deposit_amount AS depositAmount,
+            arrears_amount AS arrearsAmount,
+            elder_name AS elderName
+        FROM balance
+        WHERE elder_id = #{elderId}
+        LIMIT 1
+    </select>
+
+    <!-- 增加预缴款余额 -->
+    <update id="updatePrepaidBalance">
+        UPDATE balance
+        SET prepaid_balance = prepaid_balance + #{amount},
+            update_time = NOW()
+        WHERE elder_id = #{elderId}
+    </update>
+
+</mapper>

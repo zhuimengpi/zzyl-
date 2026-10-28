@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.NursingPlanMapper">
+
+    <!-- ==================== 结果映射 ==================== -->
+
+    <resultMap id="NursingPlanMap" type="com.zhuimeng.entity.NursingPlan">
+        <id column="id" property="id"/>
+        <result column="sort_no" property="sortNo"/>
+        <result column="plan_name" property="planName"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- ==================== 新增 ==================== -->
+
+    <insert id="insert" parameterType="com.zhuimeng.entity.NursingPlan" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO nursing_plan (
+            sort_no, plan_name, status,
+            create_time, create_by, remark
+        ) VALUES (
+            #{sortNo}, #{planName}, #{status},
+            #{createTime}, #{createBy}, #{remark}
+        )
+    </insert>
+
+    <!-- ==================== 修改 ==================== -->
+
+    <update id="updateById" parameterType="com.zhuimeng.entity.NursingPlan">
+        UPDATE nursing_plan
+        SET
+            sort_no = #{sortNo},
+            plan_name = #{planName},
+            status = #{status},
+            update_time = #{updateTime},
+            update_by = #{updateBy},
+            remark = #{remark}
+        WHERE id = #{id} AND update_time = #{oldUpdateTime}
+    </update>
+
+    <!-- ==================== 删除 ==================== -->
+
+    <delete id="deleteById">
+        DELETE FROM nursing_plan WHERE id = #{id}
+    </delete>
+
+    <!-- ==================== 查询 ==================== -->
+
+    <select id="listAll" resultMap="NursingPlanMap">
+        SELECT
+            id, sort_no, plan_name, status,
+            create_time, update_time, create_by, update_by, remark
+        FROM `nursing_plan`
+        ORDER BY sort_no ASC, id ASC
+    </select>
+
+    <select id="selectById" resultMap="NursingPlanMap">
+        SELECT
+            id, sort_no, plan_name, status,
+            create_time, update_time, create_by, update_by, remark
+        FROM `nursing_plan`
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByName" resultMap="NursingPlanMap">
+        SELECT
+            id, sort_no, plan_name, status,
+            create_time, update_time, create_by, update_by, remark
+        FROM `nursing_plan`
+        WHERE plan_name = #{planName}
+    </select>
+
+</mapper>

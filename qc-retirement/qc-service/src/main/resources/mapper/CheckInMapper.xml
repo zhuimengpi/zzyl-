@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zhuimeng.qcmanagement.mapper.CheckInMapper">
+
+    <!-- 分页查询条件 -->
+    <sql id="pageCondition">
+        <where>
+            <if test="status != null">
+                AND ci.flow_status = #{status}
+            </if>
+            <if test="elderName != null and elderName != ''">
+                AND e.name LIKE CONCAT('%', #{elderName}, '%')
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND ci.create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND ci.create_time &lt;= #{endTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 分页查询入住申请列表 -->
+    <select id="selectPageQuery" resultType="java.util.HashMap">
+        SELECT
+            ci.id,
+            ci.check_in_code AS checkInCode,
+            ci.title,
+            ci.elder_id AS elderId,
+            ci.counselor,
+            ci.check_in_time AS checkInTime,
+            ci.reason,
+            ci.remark,
+            ci.applicat,
+            ci.dept_no AS deptNo,
+            ci.applicat_id AS applicatId,
+            ci.create_time AS createTime,
+            ci.flow_status AS flowStatus,
+            ci.status,
+            ci.other_apply_info AS otherApplyInfo,
+            ci.review_info AS reviewInfo,
+            ci.update_time AS updateTime,
+            e.name AS elderName,
+            e.id_card_no AS elderIdCardNo,
+            e.bed_number AS bedNumber,
+            cfg.check_in_start_time AS checkInStartTime,
+            cfg.check_in_end_time AS checkInEndTime,
+            nl.name AS nursingLevelName
+        FROM check_in ci
+        LEFT JOIN elder e ON ci.elder_id = e.id
+        LEFT JOIN check_in_config cfg ON ci.elder_id = cfg.elder_id
+        LEFT JOIN nursing_level nl ON cfg.nursing_level_id = nl.id
+        <include refid="pageCondition"/>
+        ORDER BY ci.create_time DESC
+    </select>
+
+    <!-- 入住详情 -->
+    <select id="selectDetailById" resultType="java.util.HashMap">
+        SELECT
+            ci.id,
+            ci.check_in_code AS checkInCode,
+            ci.title,
+            ci.elder_id AS elderId,
+            ci.counselor,
+            ci.check_in_time AS checkInTime,
+            ci.reason,
+            ci.remark,
+            ci.applicat,
+            ci.applicat_id AS applicatId,
+            ci.flow_status AS flowStatus,
+            ci.status,
+            ci.other_apply_info AS otherApplyInfo,
+            ci.review_info AS reviewInfo,
+            ci.create_time AS createTime,
+            ci.update_time AS updateTime,
+            e.name AS elderName,
+            e.id_card_no AS elderIdCardNo,
+            e.phone AS elderPhone,
+            e.sex AS elderSex,
+            e.age AS elderAge,
+            e.image AS elderImage,
+            e.bed_number AS bedNumber,
+            e.bed_id AS bedId,
+            cfg.bed_no AS configBedNo,
+            cfg.check_in_start_time AS checkInStartTime,
+            cfg.check_in_end_time AS checkInEndTime,
+            cfg.cost_start_time AS costStartTime,
+            cfg.cost_end_time AS costEndTime,
+            cfg.deposit_amount AS depositAmount,
+            cfg.nursing_cost AS nursingCost,
+            cfg.bed_cost AS bedCost,
+            cfg.other_cost AS otherCost,
+            cfg.medical_insurance_payment AS medicalInsurancePayment,
+            cfg.government_subsidy AS governmentSubsidy,
+            cfg.nursing_level_id AS nursingLevelId,
+            nl.name AS nursingLevelName,
+            ct.name AS contractName,
+            ct.sign_date AS signDate,
+            ct.member_name AS memberName,
+            ct.member_phone AS memberPhone,
+            ct.pdf_url AS pdfUrl,
+            ct.contract_no AS contractNo
+        FROM check_in ci
+        LEFT JOIN elder e ON ci.elder_id = e.id
+        LEFT JOIN check_in_config cfg ON ci.elder_id = cfg.elder_id
+        LEFT JOIN nursing_level nl ON cfg.nursing_level_id = nl.id
+        LEFT JOIN contract ct ON ci.elder_id = ct.elder_id
+        WHERE ci.id = #{id}
+    </select>
+
+    <!-- 插入入住申请 -->
+    <insert id="insertCheckIn" parameterType="com.zhuimeng.entity.CheckIn" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO check_in (
+            check_in_code, title, elder_id, counselor, check_in_time,
+            reason, remark, applicat, dept_no, applicat_id,
+            flow_status, status, other_apply_info, review_info, create_time
+        ) VALUES (
+            #{checkInCode}, #{title}, #{elderId}, #{counselor}, #{checkInTime},
+            #{reason}, #{remark}, #{applicat}, #{deptNo}, #{applicatId},
+            #{flowStatus}, #{status}, #{otherApplyInfo}, #{reviewInfo}, NOW()
+        )
+    </insert>
+
+    <!-- 插入入住配置 -->
+    <insert id="insertCheckInConfig">
+        INSERT INTO check_in_config (
+            elder_id, bed_no, nursing_level_id,
+            check_in_start_time, check_in_end_time,
+            cost_start_time, cost_end_time,
+            deposit_amount, nursing_cost, bed_cost, other_cost,
+            medical_insurance_payment, government_subsidy, create_time
+        ) VALUES (
+            #{elderId}, #{bedNo}, #{nursingLevelId},
+            #{checkInStartTime}, #{checkInEndTime},
+            #{costStartTime}, #{costEndTime},
+            #{depositAmount}, #{nursingCost}, #{bedCost}, #{otherCost},
+            #{medicalInsurancePayment}, #{governmentSubsidy}, NOW()
+        )
+    </insert>
+
+    <!-- 插入合同 -->
+    <insert id="insertContract">
+        INSERT INTO contract (
+            elder_id, elder_name, name, contract_no, sign_date,
+            start_time, end_time, member_name, member_phone,
+            pdf_url, level_desc, check_in_no, status, create_by, create_time
+        ) VALUES (
+            #{elderId}, #{elderName}, #{name}, #{contractNo}, #{signDate},
+            #{startTime}, #{endTime}, #{memberName}, #{memberPhone},
+            #{pdfUrl}, #{levelDesc}, #{checkInNo}, #{status}, #{createBy}, NOW()
+        )
+    </insert>
+
+    <!-- ==================== 退住 ==================== -->
+
+    <!-- 退住分页查询条件 -->
+    <sql id="retreatPageCondition">
+        <where>
+            <if test="elderName != null and elderName != ''">
+                AND r.name LIKE CONCAT('%', #{elderName}, '%')
+            </if>
+            <if test="elderIdCardNo != null and elderIdCardNo != ''">
+                AND r.id_card_no LIKE CONCAT('%', #{elderIdCardNo}, '%')
+            </if>
+            <if test="retreatStartTime != null and retreatStartTime != ''">
+                AND r.check_out_time &gt;= #{retreatStartTime}
+            </if>
+            <if test="retreatEndTime != null and retreatEndTime != ''">
+                AND r.check_out_time &lt;= #{retreatEndTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 分页查询退住申请列表 -->
+    <select id="selectRetreatPageQuery" resultType="java.util.HashMap">
+        SELECT
+            r.id,
+            r.name AS elderName,
+            r.id_card_no AS elderIdCardNo,
+            r.check_out_time AS checkOutTime,
+            r.applicat,
+            r.create_time AS createTime
+        FROM retreat r
+        <include refid="retreatPageCondition"/>
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 退住详情 -->
+    <select id="selectRetreatDetailById" resultType="java.util.HashMap">
+        SELECT
+            r.id,
+            r.retreat_code AS retreatCode,
+            r.title,
+            r.elder_id AS elderId,
+            r.name,
+            r.id_card_no AS idCardNo,
+            r.phone,
+            r.check_in_start_time AS checkInStartTime,
+            r.check_in_end_time AS checkInEndTime,
+            r.nursing_level_name AS nursingLevelName,
+            r.bed_no AS bedNo,
+            r.nursing_name AS nursingName,
+            r.check_out_time AS checkOutTime,
+            r.reason,
+            r.applicat,
+            r.flow_status AS flowStatus,
+            r.status,
+            r.create_time AS createTime,
+            cfg.cost_start_time AS costStartTime,
+            cfg.cost_end_time AS costEndTime,
+            e.bed_number AS bedNumber,
+            ct.release_date AS releaseDate,
+            ct.release_pdf_url AS releasePdfUrl,
+            rb.bill_json AS billJson,
+            rb.refund_voucher_url AS refundVoucherUrl,
+            rb.trading_channel AS tradingChannel,
+            rb.create_time AS refundCreateTime,
+            rb.remark AS refundRemark
+        FROM retreat r
+        LEFT JOIN check_in_config cfg ON r.elder_id = cfg.elder_id
+        LEFT JOIN elder e ON r.elder_id = e.id
+        LEFT JOIN contract ct ON r.elder_id = ct.elder_id
+        LEFT JOIN retreat_bill rb ON r.id = rb.retreat_id
+        WHERE r.id = #{id}
+    </select>
+
+    <!-- 插入退住记录 -->
+    <insert id="insertRetreat" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO retreat (
+            retreat_code, title, elder_id, name, id_card_no, phone,
+            check_in_start_time, check_in_end_time,
+            nursing_level_name, bed_no, nursing_name,
+            check_out_time, reason, applicat, applicat_id, dept_no,
+            flow_status, status, create_time
+        ) VALUES (
+            #{retreatCode}, #{title}, #{elderId}, #{name}, #{idCardNo}, #{phone},
+            #{checkInStartTime}, #{checkInEndTime},
+            #{nursingLevelName}, #{bedNo}, #{nursingName},
+            #{checkOutTime}, #{reason}, #{applicat}, #{applicatId}, #{deptNo},
+            #{flowStatus}, #{status}, NOW()
+        )
+    </insert>
+
+    <!-- 插入退住账单 -->
+    <insert id="insertRetreatBill">
+        INSERT INTO retreat_bill (
+            retreat_id, bill_json, refund_voucher_url, trading_channel,
+            elder_id, is_refund, create_time
+        ) VALUES (
+            #{retreatId}, #{billJson}, #{refundVoucherUrl}, #{tradingChannel},
+            #{elderId}, #{isRefund}, NOW()
+        )
+    </insert>
+
+    <!-- 更新合同解除信息 -->
+    <update id="updateContractRelease">
+        UPDATE contract
+        SET release_date = #{releaseDate},
+            release_pdf_url = #{releasePdfUrl},
+            release_submitter = #{releaseSubmitter},
+            status = 3,
+            update_time = NOW()
+        WHERE elder_id = #{elderId}
+    </update>
+
+</mapper>
