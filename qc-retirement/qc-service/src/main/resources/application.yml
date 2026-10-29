@@ -25,11 +25,14 @@ spring:
   # 阿里云dashscope AI接入
   aliyun:
     accessKeyId: ${aliyun.accessKeyId}
+  lifecycle:
+    timeout-per-shutdown-phase: 30s        # 最多等 30 秒，把在途请求处理完
 
 # 端口配置
 server:
   # 前端代理端口
   port: 9997
+  shutdown: graceful                       # 优雅停机
 
 # Mybatis配置
 mybatis:
