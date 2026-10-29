@@ -62,3 +62,13 @@ aliyun:
     region: ${aliyun.oss.region}     #bucket所在地域
     access-key-id: ${aliyun.oss.access-key-id} #阿里云账号
     access-key-secret: ${aliyun.oss.access-key-secret} #阿里云密钥
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health        # 只暴露 health，别用 * 全开
+  endpoint:
+    health:
+      show-details: always     # 方便排查：能看到具体是 db 还是 redis 挂了
