@@ -1,0 +1,69 @@
+# syntax=docker/dockerfile:1.7
+# Day 48：瘦身版镜像（jlink 裁剪 JRE + debian slim + BuildKit 构建缓存）
+#   docker build -f Dockerfile.slim -t zzyl:slim .
+#
+# 与 Dockerfile 的区别：
+#   1. mvn 用 --mount=type=cache 复用 ~/.m2，改代码二次构建不再重下依赖
+#   2. 运行镜像不再用 250MB+ 的 eclipse-temurin:21-jre，改为 jlink 裁出的 ~45MB JRE
+#   3. 基础镜像换成 debian:bookworm-slim（~30MB），只装 curl 供健康检查
+
+# ---------- 构建 ----------
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /build
+
+COPY pom.xml ./
+COPY qc-pojo/pom.xml    qc-pojo/
+COPY qc-util/pom.xml    qc-util/
+COPY qc-service/pom.xml qc-service/
+
+# BuildKit 缓存挂载：依赖下载到宿主机的构建缓存里，不写进镜像层
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -q -DskipTests dependency:go-offline
+
+COPY qc-pojo    qc-pojo
+COPY qc-util    qc-util
+COPY qc-service qc-service
+
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -q -DskipTests package
+
+# ---------- 裁 JRE ----------
+# jdeps 在 Spring 这类大量反射的工程里容易漏模块，这里直接显式列清单，
+# 缺模块的表现通常是 NoClassDefFoundError，按报错补进 --add-modules 即可。
+FROM eclipse-temurin:21-jdk AS jre
+RUN jlink \
+      --add-modules java.base,java.logging,java.naming,java.sql,java.management,java.instrument,java.xml,java.net.http,jdk.unsupported,jdk.crypto.ec,jdk.zipfs \
+      --strip-debug \
+      --no-man-pages \
+      --no-header-files \
+      --compress=zip-6 \
+      --output /opt/jre
+
+# ---------- 运行 ----------
+FROM debian:bookworm-slim
+
+ENV TZ=Asia/Shanghai \
+    LANG=C.UTF-8 \
+    JAVA_HOME=/opt/jre \
+    PATH=/opt/jre/bin:$PATH \
+    JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -Duser.timezone=Asia/Shanghai"
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+RUN groupadd -r app && useradd -r -g app -s /sbin/nologin app
+
+COPY --from=jre   /opt/jre                            /opt/jre
+COPY --from=build /build/qc-service/target/qc-service-*.jar /app/app.jar
+RUN chown -R app:app /app
+USER app
+
+EXPOSE 9997
+
+HEALTHCHECK --interval=15s --timeout=3s --start-period=40s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:9997/actuator/health || exit 1
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar \"$@\"", "sh"]
+CMD ["--spring.profiles.active=prod"]
