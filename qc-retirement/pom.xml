@@ -53,6 +53,18 @@
         <fastjson.version>2.0.32</fastjson.version>
     </properties>
 
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <!-- 排除指定的单个文件 -->
+                    <exclude>application-dev.yml</exclude>
+                </excludes>
+            </resource>
+        </resources>
+    </build>
+
     <!-- 依赖版本统一管理：子模块声明依赖时无需再写 version -->
     <dependencyManagement>
         <dependencies>
@@ -140,6 +152,7 @@
                 <artifactId>fastjson</artifactId>
                 <version>${fastjson.version}</version>
             </dependency>
+
 
 
         </dependencies>
